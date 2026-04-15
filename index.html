@@ -1130,7 +1130,15 @@ function addToJournal(payload, status) {
     removedMeterType: payload.removedMeterType || '',
     removedMeterNumber: payload.removedMeterNumber || '',
     installedMeterType: payload.installedMeterType || '',
-    installedMeterNumber: payload.installedMeterNumber || ''
+    installedMeterNumber: payload.installedMeterNumber || '',
+    installedLichil: payload.installedLichil || '',
+    installedFasad1: payload.installedFasad1 || '',
+    installedFasad2: payload.installedFasad2 || '',
+    installedVkp: payload.installedVkp || '',
+    installedOptop: payload.installedOptop || '',
+    installedImp1: payload.installedImp1 || '',
+    installedImp2: payload.installedImp2 || '',
+    installedImp3: payload.installedImp3 || ''
   });
   localStorage.setItem('journalPLC', JSON.stringify(journal));
   updateJournalCount();
@@ -1165,13 +1173,29 @@ function openJournalModal() {
         </div>
         <div class="journal-pib">${e.pib || '—'}</div>
         <div class="journal-meters">
-          Знятий: ${e.removedMeterType} ${e.removedMeterNumber}<br>
-          Встановлений: ${e.installedMeterType} ${e.installedMeterNumber}
-        </div>
+  Знятий: ${e.removedMeterType} ${e.removedMeterNumber}<br>
+  Встановлений: ${e.installedMeterType} ${e.installedMeterNumber}<br>
+  ${buildPlombLine(e)}
+</div>
       </div>`;
     }).join('');
   }
   document.getElementById('journalModal').classList.remove('hidden');
+}
+  function buildPlombLine(e) {
+  const map = [
+    ['Кр', e.installedLichil],
+    ['ШО1', e.installedFasad1],
+    ['ШО2', e.installedFasad2],
+    ['ВКП', e.installedVkp],
+    ['Опт', e.installedOptop],
+    ['ІМП1', e.installedImp1],
+    ['ІМП2', e.installedImp2],
+    ['ІМП3', e.installedImp3],
+  ];
+  const parts = map.filter(([,v]) => v).map(([k,v]) => `${k}: ${v}`);
+  if (!parts.length) return '';
+  return '🔒 ' + parts.join(' · ');
 }
 
 // ==========================================
@@ -1191,9 +1215,10 @@ function openOfflinePreview() {
           <div style="font-weight:bold;color:#1565c0;margin-bottom:3px;">О/р: ${e.account || '—'} <span style="font-size:12px;color:#888;">${timeStr}</span></div>
           <div style="font-size:13px;margin-bottom:2px;">${e.pib || '—'}</div>
           <div style="font-size:12px;color:#555;">
-            Знятий: ${e.removedMeterType || ''} ${e.removedMeterNumber || ''}<br>
-            Встановлений: ${e.installedMeterType || ''} ${e.installedMeterNumber || ''}
-          </div>
+  Знятий: ${e.removedMeterType || ''} ${e.removedMeterNumber || ''}<br>
+  Встановлений: ${e.installedMeterType || ''} ${e.installedMeterNumber || ''}<br>
+  ${buildPlombLine(e)}
+</div>
         </div>
         <button class="offline-delete-btn" onclick="deleteOfflineItem(${idx})">🗑</button>
       </div>`;
