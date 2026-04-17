@@ -998,10 +998,23 @@ async function syncOfflineData() {
   try {
     const res = await sendToGoogle("saveDataBatch", { items: offlineData });
     if (res.ok) {
-      localStorage.removeItem('offlineDataPLC');
-      playSuccessSound();
-      alert(`✅ Вивантажено ${res.saved} записів з офлайну!`);
-      updateOfflineCount();
+  // Оновлюємо статус у журналі з 'offline' на 'online'
+  const syncedAccounts = offlineData.map(d => d.account);
+  let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
+  journal = journal.map(e => {
+    if (e.status === 'offline' && syncedAccounts.includes(e.account)) {
+      return Object.assign({}, e, { status: 'online' });
+    }
+    return e;
+  });
+  localStorage.setItem('journalPLC', JSON.stringify(journal));
+
+  localStorage.removeItem('offlineDataPLC');
+  playSuccessSound();
+  document.getElementById('offlinePreviewModal').classList.add('hidden');
+  alert(`✅ Вивантажено ${res.saved} записів з офлайну!`);
+  updateOfflineCount();
+  updateJournalCount();
     } else {
       alert("⚠️ Помилка синхронізації: " + (res.message || ""));
       btn.innerHTML = `📤 Незавантажені дані: <span id="offlineCount">${offlineData.length}</span>`;
