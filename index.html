@@ -923,7 +923,9 @@ async function saveData() {
   const imp1 = checkSeal("remImp1", "instImp1"), imp2 = checkSeal("remImp2", "instImp2"), imp3 = checkSeal("remImp3", "instImp3");
 
   const payload = {
-    worker: workerTab, 
+    worker: workerTab,
+    pib: document.getElementById("viewPib1").innerText,
+    address: document.getElementById("viewAddr1").innerText,
     pass: localStorage.getItem("workerPass"), 
     account: currentAccount,
     
@@ -1011,8 +1013,8 @@ async function syncOfflineData() {
 
   localStorage.removeItem('offlineDataPLC');
   playSuccessSound();
-  document.getElementById('offlinePreviewModal').classList.add('hidden');
   alert(`✅ Вивантажено ${res.saved} записів з офлайну!`);
+  document.getElementById('offlinePreviewModal').classList.add('hidden');
   updateOfflineCount();
   updateJournalCount();
     } else {
