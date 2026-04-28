@@ -912,7 +912,22 @@ async function saveData() {
 
   const instOptop = getVal("instOptop");
   if(!instOptop) return alert("❌ Обов'язково вкажіть пломбу Оптопорту (Встановлену)!");
+  // Перевірка дубліката лічильника в журналі за сьогодні
+const remNumVal = getVal("remNum");
+const instNumVal = instNum;
+const today = new Date().toDateString();
+let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
+journal = journal.filter(e => new Date(e.ts).toDateString() === today);
 
+const dupRem = journal.find(e => e.removedMeterNumber && e.removedMeterNumber === remNumVal);
+const dupInst = journal.find(e => e.installedMeterNumber && e.installedMeterNumber === instNumVal);
+
+if (dupRem) {
+  if (!confirm(`⚠️ УВАГА! Знятий лічильник ${remNumVal} вже є в журналі сьогодні (О/р: ${dupRem.account}, ${new Date(dupRem.ts).toLocaleTimeString('uk-UA', {hour:'2-digit',minute:'2-digit'})}).\n\nПродовжити збереження?`)) return;
+}
+if (dupInst) {
+  if (!confirm(`⚠️ УВАГА! Встановлений лічильник ${instNumVal} вже є в журналі сьогодні (О/р: ${dupInst.account}, ${new Date(dupInst.ts).toLocaleTimeString('uk-UA', {hour:'2-digit',minute:'2-digit'})}).\n\nПродовжити збереження?`)) return;
+}
   const checkSeal = (remId, instId) => {
     let r = cleanPlomb(getVal(remId)), i = cleanPlomb(getVal(instId));
     return (r === i && r !== "") ? { rem: "", inst: i } : { rem: r, inst: i };
@@ -1133,9 +1148,13 @@ function parseMeterBarcode(rawCode) {
 // ЖУРНАЛ ЗА ДЕНЬ
 // ==========================================
 function addToJournal(payload, status) {
-  const today = new Date().toDateString();
   let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
-  journal = journal.filter(e => new Date(e.ts).toDateString() === today);
+  
+  // Зберігаємо тільки останні 24 дні
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  journal = journal.filter(e => new Date(e.ts) >= cutoff);
+  
   journal.push({
     ts: new Date().toISOString(),
     status: status,
@@ -1158,45 +1177,86 @@ function addToJournal(payload, status) {
   localStorage.setItem('journalPLC', JSON.stringify(journal));
   updateJournalCount();
 }
-
+  
 function updateJournalCount() {
   const today = new Date().toDateString();
   let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
-  journal = journal.filter(e => new Date(e.ts).toDateString() === today);
   const el = document.getElementById('journalCount');
-  if (el) el.innerText = journal.length;
+  if (el) el.innerText = journal.filter(e => new Date(e.ts).toDateString() === today).length;
 }
 
 function openJournalModal() {
-  const today = new Date().toDateString();
   let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
-  journal = journal.filter(e => new Date(e.ts).toDateString() === today);
+  
+  // Збираємо унікальні дати
+  const datesMap = {};
+  journal.forEach(e => {
+    const d = new Date(e.ts).toDateString();
+    if (!datesMap[d]) datesMap[d] = [];
+    datesMap[d].push(e);
+  });
+  const sortedDates = Object.keys(datesMap).sort((a, b) => new Date(b) - new Date(a));
+  
   const list = document.getElementById('journalList');
-  if (journal.length === 0) {
-    list.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Сьогодні замін ще не було</div>';
-  } else {
-    list.innerHTML = journal.slice().reverse().map(e => {
-      const t = new Date(e.ts);
-      const timeStr = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
-      const badge = e.status === 'online'
-        ? '<span class="badge-online">✓ відправлено</span>'
-        : '<span class="badge-offline">⚠ офлайн</span>';
-      return `<div class="journal-item">
-        <div class="journal-item-top">
-          <span class="journal-acc">О/р: ${e.account}</span>
-          <span class="journal-time">${timeStr} ${badge}</span>
-        </div>
-        <div class="journal-pib">${e.pib || '—'}</div>
-        <div class="journal-meters">
-  Знятий: ${e.removedMeterType} ${e.removedMeterNumber}<br>
-  Встановлений: ${e.installedMeterType} ${e.installedMeterNumber}<br>
-  ${buildPlombLine(e)}
-</div>
-      </div>`;
-    }).join('');
-  }
+  const today = new Date().toDateString();
+  
+  // Будуємо селектор дат + список
+  const dateOptions = sortedDates.map(d => {
+    const label = d === today ? 'Сьогодні' : new Date(d).toLocaleDateString('uk-UA', {day:'numeric', month:'long'});
+    return `<option value="${d}">${label} (${datesMap[d].length})</option>`;
+  }).join('');
+
+  list.innerHTML = `
+    <div style="margin-bottom:10px;">
+      <select id="journalDateSelect" onchange="renderJournalForDate()" 
+        style="width:100%;padding:10px;font-size:16px;border-radius:8px;border:1px solid #ccc;">
+        ${dateOptions}
+      </select>
+    </div>
+    <div id="journalDayList"></div>
+  `;
+  
   document.getElementById('journalModal').classList.remove('hidden');
+  renderJournalForDate();
 }
+
+function renderJournalForDate() {
+  const sel = document.getElementById('journalDateSelect');
+  if (!sel) return;
+  const selectedDate = sel.value;
+  
+  let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
+  const dayEntries = journal
+    .filter(e => new Date(e.ts).toDateString() === selectedDate)
+    .slice().reverse();
+  
+  const container = document.getElementById('journalDayList');
+  if (dayEntries.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Немає записів</div>';
+    return;
+  }
+  
+  container.innerHTML = dayEntries.map(e => {
+    const t = new Date(e.ts);
+    const timeStr = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
+    const badge = e.status === 'online'
+      ? '<span class="badge-online">✓ відправлено</span>'
+      : '<span class="badge-offline">⚠ офлайн</span>';
+    return `<div class="journal-item">
+      <div class="journal-item-top">
+        <span class="journal-acc">О/р: ${e.account}</span>
+        <span class="journal-time">${timeStr} ${badge}</span>
+      </div>
+      <div class="journal-pib">${e.pib || '—'}</div>
+      <div class="journal-meters">
+        Знятий: ${e.removedMeterType} ${e.removedMeterNumber}<br>
+        Встановлений: ${e.installedMeterType} ${e.installedMeterNumber}<br>
+        ${buildPlombLine(e)}
+      </div>
+    </div>`;
+  }).join('');
+}
+  
   function buildPlombLine(e) {
   const map = [
     ['Кр', e.installedLichil],
