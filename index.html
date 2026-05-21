@@ -786,10 +786,7 @@ async function search() {
   btn.innerText = "Шукаю...";
 
   try {
-    const tab = localStorage.getItem("workerTab");
-    const pass = localStorage.getItem("workerPass");
-
-    const res = await sendToGoogle("findAccountFast", { account: acc, tab: tab, pass: pass });
+    const res = await sendToGoogle("findAccountFast", { account: acc });
 
     if (res.error) {
       alert(res.error);
