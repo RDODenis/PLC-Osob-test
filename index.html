@@ -382,16 +382,16 @@ async function sendToGoogle(action, payloadData = {}) {
   const response = await fetch(SCRIPT_URL, {
     method: "POST",
     body: formData,
-    headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    redirect: "follow"
   });
 
-  const text = await response.text(); // Спочатку читаємо як текст!
-  
+  const text = await response.text();
   try {
-    return JSON.parse(text); // Пробуємо перетворити в JSON
+    return JSON.parse(text);
   } catch (e) {
-    console.error("Відповідь Гугла не є JSON:", text);
-    throw new Error("Сервер Гугла завантажується, спробуйте ще раз.");
+    console.error("Відповідь Гугла:", text);
+    throw new Error("Сервер не відповів. Спробуйте ще раз.");
   }
 }
 
