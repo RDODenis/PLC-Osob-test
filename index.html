@@ -1160,6 +1160,10 @@ function addToJournal(payload, status) {
     address: payload.address || '',
     removedMeterType: payload.removedMeterType || '',
     removedMeterNumber: payload.removedMeterNumber || '',
+    removedT0: payload.removedT0 || '',
+    removedT1: payload.removedT1 || '',
+    removedT2: payload.removedT2 || '',
+    removedT3: payload.removedT3 || '',
     installedMeterType: payload.installedMeterType || '',
     installedMeterNumber: payload.installedMeterNumber || '',
     installedLichil: payload.installedLichil || '',
@@ -1244,9 +1248,10 @@ function renderJournalForDate() {
         <span class="journal-acc">О/р: ${e.account}</span>
         <span class="journal-time">${timeStr} ${badge}</span>
       </div>
-      <div class="journal-pib">${e.pib || '—'}</div>
+      
+      <div class="journal-pib">${e.address || '—'}</div>
       <div class="journal-meters">
-        Знятий: ${e.removedMeterType} ${e.removedMeterNumber}<br>
+        Знятий: ${e.removedMeterType} ${e.removedMeterNumber}<br>${buildReadingsLine(e) ? `<b>${buildReadingsLine(e)}</b><br>` : ''}
         Встановлений: ${e.installedMeterType} ${e.installedMeterNumber}<br>
         ${buildPlombLine(e)}
       </div>
@@ -1268,6 +1273,11 @@ function renderJournalForDate() {
   const parts = map.filter(([,v]) => v).map(([k,v]) => `${k}: ${v}`);
   if (!parts.length) return '';
   return '🔒 ' + parts.join(' · ');
+}
+  function buildReadingsLine(e) {
+  const vals = [e.removedT0, e.removedT1, e.removedT2, e.removedT3].filter(v => v && v !== '0000000' && v !== '');
+  if (!vals.length) return '';
+  return 'Покази: ' + vals.join('/');
 }
 
 // ==========================================
