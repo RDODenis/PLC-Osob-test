@@ -1007,36 +1007,55 @@ async function syncOfflineData() {
   if (offlineData.length === 0) return;
 
   const btn = document.getElementById('btnSync');
-  btn.innerText = "⏳ Відправка...";
+  let saved = 0;
+  let failed = 0;
+  const total = offlineData.length;
 
-  try {
-    const res = await sendToGoogle("saveDataBatch", { items: offlineData });
-    if (res.ok) {
-  // Оновлюємо статус у журналі з 'offline' на 'online'
-  const syncedAccounts = offlineData.map(d => d.account);
-  let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
-  journal = journal.map(e => {
-    if (e.status === 'offline' && syncedAccounts.includes(e.account)) {
-      return Object.assign({}, e, { status: 'online' });
+  for (let i = 0; i < offlineData.length; i++) {
+    btn.innerText = `⏳ Відправка ${i + 1} з ${total}...`;
+    try {
+      const res = await sendToGoogle("saveData", { data: offlineData[i] });
+      if (res && res.success) {
+        saved++;
+      } else {
+        failed++;
+      }
+    } catch (e) {
+      failed++;
     }
-    return e;
-  });
-  localStorage.setItem('journalPLC', JSON.stringify(journal));
+  }
 
-  localStorage.removeItem('offlineDataPLC');
-  playSuccessSound();
-  alert(`✅ Вивантажено ${res.saved} записів з офлайну!`);
-  document.getElementById('offlinePreviewModal').classList.add('hidden');
+  // Оновлюємо статус у журналі
+  if (saved > 0) {
+    const syncedAccounts = offlineData.slice(0, saved).map(d => d.account);
+    let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
+    journal = journal.map(e => {
+      if (e.status === 'offline' && syncedAccounts.includes(e.account)) {
+        return Object.assign({}, e, { status: 'online' });
+      }
+      return e;
+    });
+    localStorage.setItem('journalPLC', JSON.stringify(journal));
+  }
+
+  if (failed === 0) {
+    // Всі пройшли успішно
+    localStorage.removeItem('offlineDataPLC');
+    playSuccessSound();
+    document.getElementById('offlinePreviewModal').classList.add('hidden');
+    alert(`✅ Вивантажено ${saved} записів!`);
+  } else if (saved > 0) {
+    // Частина пройшла — видаляємо тільки успішні
+    offlineData = offlineData.slice(saved);
+    localStorage.setItem('offlineDataPLC', JSON.stringify(offlineData));
+    alert(`⚠️ Вивантажено ${saved} з ${total}. Залишилось ${failed} — спробуйте ще раз.`);
+  } else {
+    alert(`❌ Не вдалось відправити. Перевірте з'єднання і спробуйте ще раз.`);
+  }
+
   updateOfflineCount();
   updateJournalCount();
-    } else {
-      alert("⚠️ Помилка синхронізації: " + (res.message || ""));
-      btn.innerHTML = `📤 Незавантажені дані: <span id="offlineCount">${offlineData.length}</span>`;
-    }
-  } catch (e) {
-    alert("❌ Помилка синхронізації. Спробуйте пізніше.");
-    btn.innerHTML = `📤 Незавантажені дані: <span id="offlineCount">${offlineData.length}</span>`;
-  }
+  btn.innerHTML = `📤 Незавантажені дані: <span id="offlineCount">${offlineData.length}</span>`;
 }
 
 // ==========================================
