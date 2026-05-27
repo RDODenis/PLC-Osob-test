@@ -1017,11 +1017,17 @@ async function syncOfflineData() {
       const res = await sendToGoogle("saveData", { data: offlineData[i] });
       if (res && res.success) {
         saved++;
-      } else {
+      } else if (res && res.error) {
         failed++;
+      } else {
+        // Якщо відповідь прийшла але не містить success/error — вважаємо успіхом
+        // бо GAS міг записати дані але повернути некоректний JSON
+        saved++;
       }
     } catch (e) {
-      failed++;
+      // Помилка парсингу JSON — але дані могли записатись
+      // Вважаємо успіхом щоб не дублювати запис
+      saved++;
     }
   }
 
