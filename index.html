@@ -105,6 +105,17 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 .journal-time { font-size: 12px; color: #888; }
 .journal-pib { color: #333; margin-bottom: 3px; }
 .journal-meters { font-size: 12px; color: #555; }
+.icon-btn { width:32px !important; min-height:32px !important; margin-top:0 !important; background:none; border:none; cursor:pointer; padding:6px; display:flex; align-items:center; justify-content:center; border-radius:50%; flex-shrink:0; }
+.icon-btn:active { background:#eee; transform: scale(0.92); }
+.icon-btn svg { width:20px; height:20px; }
+.icon-share svg { fill:#1565c0; }
+.icon-delete svg { fill:#888; }
+.journal-top-mid { flex:1; display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; }
+.journal-acc, .journal-time { white-space:nowrap; }
+
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; display:flex; align-items:center; justify-content:center; }
+.modal-overlay.hidden { display:none; }
+.modal-card { background:white; border-radius:12px; padding:20px; width:85%; max-width:320px; text-align:center; }
 .badge-online { background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 2px 8px; border-radius: 20px; }
 .badge-offline { background: #fff3e0; color: #e65100; font-size: 11px; padding: 2px 8px; border-radius: 20px; }
 .offline-item { border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px 12px; font-size: 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
@@ -208,25 +219,25 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 <div class="blockTitle">Фотозвіт знятого лічильника</div>
 
 <div style="display:flex; gap:8px;">
-  <button type="button" onclick="document.getElementById('fileInput').click()" 
+  <button type="button" onclick="document.getElementById('fileInput_removed').click()" 
     style="flex:1; margin-top:0; background-color: #2196F3; color: white; border: none; border-radius: 8px; height: 44px; font-size: 16px; font-weight: bold;">
     Виберіть файл
   </button>
 
-  <button type="button" onclick="document.getElementById('cameraInput').click()" 
+  <button type="button" onclick="document.getElementById('cameraInput_removed').click()" 
     style="flex:1; margin-top:0; background-color: #1565c0; color: white; border: none; border-radius: 8px; height: 44px; font-size: 16px; font-weight: bold;">
     Зробити фото
   </button>
 </div>
 
-<input type="file" id="fileInput" accept="image/*" style="display:none;">
-<input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;">
+<input type="file" id="fileInput_removed" accept="image/*" style="display:none;">
+<input type="file" id="cameraInput_removed" accept="image/*" capture="environment" style="display:none;">
     
-<div id="uploadStatus" style="margin-top:6px; font-size: 14px;"></div>
-<input type="hidden" id="photoUrl">
+<div id="uploadStatus_removed" style="margin-top:6px; font-size: 14px;"></div>
+<input type="hidden" id="photoUrl_removed">
 <div id="debugBox" style="margin-top:10px; padding:10px; background:#fff3e0; border-radius:8px; font-size:12px; word-break:break-all; white-space:pre-wrap; display:none;"></div>    
 
-<div id="photoThumbnails" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
+<div id="photoThumbnails_removed" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
 
     <button class="btn-next" onclick="goToStep2()">Далі ➡</button>
     <button class="btn-back" onclick="goHome()">🔙 Назад</button>
@@ -317,12 +328,34 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
     <div class="sectionLine"></div>
 
     <div class="blockTitle">Покази встановленого лічильника</div>
-    <div class="meterRow">
-      <div class="meterBox"><label>T</label><input id="instT0" inputmode="numeric"></div>
-      <div class="meterBox"><label>T1</label><input id="instT1" inputmode="numeric"></div>
-      <div class="meterBox"><label>T2</label><input id="instT2" inputmode="numeric"></div>
-      <div class="meterBox"><label>T3</label><input id="instT3" inputmode="numeric"></div>
-    </div>
+<div class="meterRow">
+  <div class="meterBox"><label>T</label><input id="instT0" inputmode="numeric"></div>
+  <div class="meterBox"><label>T1</label><input id="instT1" inputmode="numeric"></div>
+  <div class="meterBox"><label>T2</label><input id="instT2" inputmode="numeric"></div>
+  <div class="meterBox"><label>T3</label><input id="instT3" inputmode="numeric"></div>
+</div>
+
+<div class="blockTitle">Фотозвіт встановленого лічильника</div>
+
+<div style="display:flex; gap:8px;">
+  <button type="button" onclick="document.getElementById('fileInput_installed').click()" 
+    style="flex:1; margin-top:0; background-color: #2196F3; color: white; border: none; border-radius: 8px; height: 44px; font-size: 16px; font-weight: bold;">
+    Виберіть файл
+  </button>
+
+  <button type="button" onclick="document.getElementById('cameraInput_installed').click()" 
+    style="flex:1; margin-top:0; background-color: #1565c0; color: white; border: none; border-radius: 8px; height: 44px; font-size: 16px; font-weight: bold;">
+    Зробити фото
+  </button>
+</div>
+
+<input type="file" id="fileInput_installed" accept="image/*" style="display:none;">
+<input type="file" id="cameraInput_installed" accept="image/*" capture="environment" style="display:none;">
+    
+<div id="uploadStatus_installed" style="margin-top:6px; font-size: 14px;"></div>
+<input type="hidden" id="photoUrl_installed">
+
+<div id="photoThumbnails_installed" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
    
     <button class="btn-save" id="btnSaveMain" onclick="saveData()">💾 Зберегти</button>
     <div id="saveHint"></div>
@@ -377,6 +410,15 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
   </div>
 </div>
 
+  <div id="entryActionsModal" class="hidden modal-overlay">
+  <div class="modal-card">
+    <div style="font-size:16px; font-weight:bold; margin-bottom:16px;">Що зробити із записом?</div>
+    <button id="btnEditEntry" style="width:100%; padding:12px; margin-bottom:10px; background:#2196F3; color:white; border:none; border-radius:8px; font-size:16px; font-weight:bold;">✏️ Правити</button>
+    <button id="btnDeleteEntry" style="width:100%; padding:12px; margin-bottom:10px; background:#e53935; color:white; border:none; border-radius:8px; font-size:16px; font-weight:bold;">🗑 Видалити</button>
+    <button onclick="closeEntryActionsModal()" style="width:100%; padding:10px; background:#eee; color:#333; border:none; border-radius:8px; font-size:14px;">Скасувати</button>
+  </div>
+</div>
+
 <!-- ПЕРЕГЛЯД ОФЛАЙН ДАНИХ -->
 <div id="offlinePreviewModal" class="hidden">
   <div class="journal-card">
@@ -393,7 +435,7 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 // ==========================================
 // ⚠️ ТУТ ВСТАВ ПОСИЛАННЯ З GOOGLE APPS SCRIPT
 // ==========================================
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3q997q_PEJ02rO0PerbcWO8G3AFPXxhIOfJhFj89Hy2IMFX8bT3iih6S3oS3MKHol/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzxAEIzPlJtkqugSaQ8CFQqW6_bu8zeIhfzw1xM6RQ7QQsktt66tqqaHoB4XUoSA3rA-g/exec"; 
 
 // ==========================================
 // ОПТИМІЗОВАНИЙ МІСТ ДЛЯ ШВИДКОГО ЗВ'ЯЗКУ
@@ -863,28 +905,42 @@ function showScreen(id) {
   document.getElementById(id).classList.remove("hidden");
   window.scrollTo(0, 0);
 }
+  
+let photoReminderShown = { removed: false, installed: false };
+  
 function goHome() { 
   document.querySelectorAll('#step1 input, #step2 input, #step1 textarea, #step2 textarea').forEach(inp => inp.value = '');
   document.getElementById("account").value = "";
   document.getElementById("saveHint").innerText = "";
   resetPhotoUI();
+  editingEntryId = null;
+  editingJournalTs = null;
+  document.getElementById('btnSaveMain').textContent = '💾 Зберегти';
   showScreen('searchBlock'); 
   updateOfflineCount();
 }
 
 function resetPhotoUI() {
-  document.getElementById('uploadStatus').textContent = '';
-  document.getElementById('photoUrl').value = '';
-  photoUrls = [];
-  document.getElementById('photoThumbnails').innerHTML = '';
-
-  document.getElementById('fileInput').value = '';
-  document.getElementById('cameraInput').value = '';
+  ['removed', 'installed'].forEach(slot => {
+    document.getElementById('uploadStatus_' + slot).textContent = '';
+    document.getElementById('photoUrl_' + slot).value = '';
+    photoState[slot].urls = [];
+    document.getElementById('photoThumbnails_' + slot).innerHTML = '';
+    document.getElementById('fileInput_' + slot).value = '';
+    document.getElementById('cameraInput_' + slot).value = '';
+  });
+  photoReminderShown = { removed: false, installed: false };
 }
   
 function goToStep2() { 
   const remT0 = document.getElementById("remT0").value.trim();
   if(!remT0) return alert("❌ Обов'язково введіть покази 'T' для ЗНЯТОГО лічильника!");
+
+  if (photoState.removed.urls.length === 0 && !photoReminderShown.removed) {
+    photoReminderShown.removed = true;
+    alert('📷 Зробіть фото або вставте фото знятого лічильника');
+    return;
+  }
 
   showScreen('step2'); 
   document.getElementById("instType").value = "NIK2104 AP2T.1802.MC.11";
@@ -936,6 +992,12 @@ async function saveData() {
   const instNum = getVal("instNum");
   if(!instNum) return alert("❌ Обов'язково введіть Номер ВСТАНОВЛЕНОГО лічильника!");
 
+  if (photoState.installed.urls.length === 0 && !photoReminderShown.installed) {
+    photoReminderShown.installed = true;
+    alert('📷 Зробіть фото або вставте фото встановленого лічильника');
+    return;
+  }
+
   const instT0 = getVal("instT0");
   if(!instT0) return alert("❌ Обов'язково введіть покази 'T' для ВСТАНОВЛЕНОГО лічильника!");
 
@@ -969,8 +1031,11 @@ if (dupInst) {
   const vkp = checkSeal("remVkp", "instVkp"), opt = checkSeal("remOptop", "instOptop");
   const imp1 = checkSeal("remImp1", "instImp1"), imp2 = checkSeal("remImp2", "instImp2"), imp3 = checkSeal("remImp3", "instImp3");
 
+  const entryId = editingEntryId || generateEntryId();
+
   const payload = {
     worker: workerTab,
+    entryId: entryId,
     pib: document.getElementById("viewPib1").innerText,
     address: document.getElementById("viewAddr1").innerText,
     pass: localStorage.getItem("workerPass"), 
@@ -987,15 +1052,42 @@ if (dupInst) {
     installedLichil: l.inst, installedFasad1: f1.inst, installedFasad2: f2.inst, installedVkp: vkp.inst,
     installedOptop: opt.inst, installedImp1: imp1.inst, installedImp2: imp2.inst, installedImp3: imp3.inst,
     installedOther: getVal("instOther"),
-    photoUrl: document.getElementById('photoUrl').value.trim()
-
+    photoUrl: document.getElementById('photoUrl_removed').value.trim(),
+    installedPhotoUrl: document.getElementById('photoUrl_installed').value.trim()
   };
-
+  
   removeUsedPlombs([l.inst, f1.inst, f2.inst, vkp.inst, opt.inst], [imp1.inst, imp2.inst, imp3.inst]);
 
   const btn = document.getElementById("btnSaveMain");
   const hint = document.getElementById("saveHint");
   btn.style.display = "none";
+
+  if (editingEntryId) {
+    hint.innerText = "⏳ Оновлення...";
+    try {
+      const res = await sendToGoogle('updateData', { data: payload });
+      if (res && res.success) {
+        updateJournalEntryInPlace(payload);
+        playSuccessSound();
+        hint.innerText = "✅ Запис оновлено!";
+        setTimeout(() => {
+          btn.style.display = "block";
+          btn.textContent = '💾 Зберегти';
+          editingEntryId = null;
+          editingJournalTs = null;
+          goHome();
+        }, 1500);
+      } else {
+        hint.innerText = "❌ " + (res && res.message ? res.message : "Помилка оновлення");
+        btn.style.display = "block";
+      }
+    } catch (err) {
+      hint.innerText = "❌ Немає з'єднання. Редагування можливе тільки онлайн.";
+      btn.style.display = "block";
+    }
+    return;
+  }
+
   hint.innerText = "⏳ Збереження...";
 
   if (!navigator.onLine) {
@@ -1236,7 +1328,9 @@ function addToJournal(payload, status) {
     installedImp1: payload.installedImp1 || '',
     installedImp2: payload.installedImp2 || '',
     installedImp3: payload.installedImp3 || '',
-    photoUrl: payload.photoUrl || ''
+    photoUrl: payload.photoUrl || '',
+    installedPhotoUrl: payload.installedPhotoUrl || '',
+    entryId: payload.entryId || ''
   });
   localStorage.setItem('journalPLC', JSON.stringify(journal));
   updateJournalCount();
@@ -1249,6 +1343,30 @@ function updateJournalCount() {
   if (el) el.innerText = journal.filter(e => new Date(e.ts).toDateString() === today).length;
 }
 
+  let currentEntryContext = null;
+
+function openEntryActions(index, dateStr) {
+  currentEntryContext = { index, dateStr };
+  document.getElementById('entryActionsModal').classList.remove('hidden');
+}
+function closeEntryActionsModal() {
+  document.getElementById('entryActionsModal').classList.add('hidden');
+  currentEntryContext = null;
+}
+
+document.getElementById('btnDeleteEntry').addEventListener('click', function() {
+  if (!currentEntryContext) return;
+  if (confirm('Видалити цей запис із журналу?\n\nУ Google Таблиці запис ЗАЛИШИТЬСЯ без змін — видаляється тільки з журналу застосунку.')) {
+    deleteJournalEntry(currentEntryContext.index, currentEntryContext.dateStr);
+  }
+  closeEntryActionsModal();
+});
+
+document.getElementById('btnEditEntry').addEventListener('click', function() {
+  if (!currentEntryContext) return;
+  startEditEntry(currentEntryContext.index, currentEntryContext.dateStr);
+});
+  
 function openJournalModal() {
   let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
   
@@ -1300,7 +1418,7 @@ function renderJournalForDate() {
     return;
   }
   
-  container.innerHTML = dayEntries.map(e => {
+ container.innerHTML = dayEntries.map((e, i) => {
     const t = new Date(e.ts);
     const timeStr = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
     const badge = e.status === 'online'
@@ -1308,21 +1426,29 @@ function renderJournalForDate() {
       : '<span class="badge-offline">⚠ офлайн</span>';
     return `<div class="journal-item">
       <div class="journal-item-top">
-        <span class="journal-acc">О/р: ${e.account}</span>
-        <span class="journal-time">${timeStr} ${badge}</span>
+        <button class="icon-btn icon-share" onclick="shareJournalEntry(${i}, '${selectedDate}')" title="Надіслати">
+          <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+        </button>
+        <div class="journal-top-mid">
+          <span class="journal-acc">О/р: ${e.account}</span>
+          <span class="journal-time">${timeStr} ${badge}</span>
+        </div>
+        <button class="icon-btn icon-delete" onclick="openEntryActions(${i}, '${selectedDate}')" title="Дії із записом">
+          <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
       </div>
       
       <div class="journal-pib">${e.address || '—'}</div>
       <div class="journal-meters">
         Знятий: ${e.removedMeterType} ${e.removedMeterNumber}<br>${buildReadingsLine(e) ? `<b>${buildReadingsLine(e)}</b><br>` : ''}
-        ${e.photoUrl ? e.photoUrl.split('\n').filter(u => u.trim()).map((u, i, arr) => `<a href="${u}" target="_blank" style="color:#1565c0;text-decoration:underline;">📷 Фото${arr.length > 1 ? ' ' + (i+1) : ''}</a>`).join(' &nbsp;|&nbsp; ') + '<br>' : ''}
+        ${e.photoUrl ? e.photoUrl.split('\n').filter(u => u.trim()).map((u, idx, arr) => `<a href="${u}" target="_blank" style="color:#1565c0;text-decoration:underline;">📷 Фото${arr.length > 1 ? ' ' + (idx+1) : ''}</a>`).join(' &nbsp;|&nbsp; ') + '<br>' : ''}
         Встановлений: ${e.installedMeterType} ${e.installedMeterNumber}<br>
+        ${e.installedPhotoUrl ? e.installedPhotoUrl.split('\n').filter(u => u.trim()).map((u, idx, arr) => `<a href="${u}" target="_blank" style="color:#1565c0;text-decoration:underline;">📷 Фото${arr.length > 1 ? ' ' + (idx+1) : ''}</a>`).join(' &nbsp;|&nbsp; ') + '<br>' : ''}
         ${buildPlombLine(e)}
       </div>
     </div>`;
   }).join('');
 }
-  
   function buildPlombLine(e) {
   const map = [
     ['Кр', e.installedLichil],
@@ -1342,6 +1468,43 @@ function renderJournalForDate() {
   const vals = [e.removedT0, e.removedT1, e.removedT2, e.removedT3].filter(v => v && v !== '0000000' && v !== '');
   if (!vals.length) return '';
   return 'Покази: ' + vals.join('/');
+}
+
+  function shareJournalEntry(index, dateStr) {
+  let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
+  const dayEntries = journal.filter(e => new Date(e.ts).toDateString() === dateStr).slice().reverse();
+  const e = dayEntries[index];
+  if (!e) return alert('Запис не знайдено');
+
+  let text = `📋 Заміна лічильника\n`;
+  text += `О/р: ${e.account}\n`;
+  text += `Адреса: ${e.address || '—'}\n\n`;
+
+  text += `Знятий: ${e.removedMeterType} ${e.removedMeterNumber}\n`;
+  if (buildReadingsLine(e)) text += buildReadingsLine(e) + '\n';
+  if (e.photoUrl) {
+    e.photoUrl.split('\n').filter(u => u.trim()).forEach((u, i) => text += `Фото знятого ${i+1}: ${u}\n`);
+  }
+
+  text += `\nВстановлений: ${e.installedMeterType} ${e.installedMeterNumber}\n`;
+  const plombLine = buildPlombLine(e).replace('🔒 ', '');
+  if (plombLine) text += 'Пломби: ' + plombLine + '\n';
+  if (e.installedPhotoUrl) {
+    e.installedPhotoUrl.split('\n').filter(u => u.trim()).forEach((u, i) => text += `Фото встановленого ${i+1}: ${u}\n`);
+  }
+
+  const t = new Date(e.ts);
+  text += `\nЧас: ${t.toLocaleString('uk-UA')}`;
+
+  if (navigator.share) {
+    navigator.share({ title: `Заміна лічильника О/р ${e.account}`, text: text }).catch(err => console.warn('Поділитися скасовано', err));
+  } else {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('📋 Інформацію скопійовано в буфер обміну! Встав її (довге натискання → Вставити) у потрібний месенджер.');
+    }).catch(() => {
+      prompt('Скопіюй текст вручну (Ctrl+C):', text);
+    });
+  }
 }
 
 // ==========================================
@@ -1396,26 +1559,50 @@ function updateOfflineCount() {
   }
 }
  
-document.getElementById('fileInput').addEventListener('change', async function() {
+document.getElementById('fileInput_removed').addEventListener('change', async function() {
   if (this.files && this.files[0]) {
-    if (photoUrls.length >= MAX_PHOTOS) {
-      alert(`Максимум ${MAX_PHOTOS} фото! Спочатку видаліть одне з наявних.`);
+    if (photoState.removed.urls.length >= photoState.removed.max) {
+      alert(`Максимум ${photoState.removed.max} фото! Спочатку видаліть одне з наявних.`);
       this.value = '';
       return;
     }
-    await uploadPhotoFile(this.files[0]);
+    await uploadPhotoFile(this.files[0], 'removed');
     this.value = '';
   }
 });
 
-document.getElementById('cameraInput').addEventListener('change', async function() {
+document.getElementById('cameraInput_removed').addEventListener('change', async function() {
   if (this.files && this.files[0]) {
-    if (photoUrls.length >= MAX_PHOTOS) {
-      alert(`Максимум ${MAX_PHOTOS} фото! Спочатку видаліть одне з наявних.`);
+    if (photoState.removed.urls.length >= photoState.removed.max) {
+      alert(`Максимум ${photoState.removed.max} фото! Спочатку видаліть одне з наявних.`);
       this.value = '';
       return;
     }
-    await uploadPhotoFile(this.files[0]);
+    await uploadPhotoFile(this.files[0], 'removed');
+    this.value = '';
+  }
+});
+
+document.getElementById('fileInput_installed').addEventListener('change', async function() {
+  if (this.files && this.files[0]) {
+    if (photoState.installed.urls.length >= photoState.installed.max) {
+      alert(`Максимум ${photoState.installed.max} фото! Спочатку видаліть одне з наявних.`);
+      this.value = '';
+      return;
+    }
+    await uploadPhotoFile(this.files[0], 'installed');
+    this.value = '';
+  }
+});
+
+document.getElementById('cameraInput_installed').addEventListener('change', async function() {
+  if (this.files && this.files[0]) {
+    if (photoState.installed.urls.length >= photoState.installed.max) {
+      alert(`Максимум ${photoState.installed.max} фото! Спочатку видаліть одне з наявних.`);
+      this.value = '';
+      return;
+    }
+    await uploadPhotoFile(this.files[0], 'installed');
     this.value = '';
   }
 });
@@ -1468,11 +1655,21 @@ function compressImage(file, maxSizeKB = 200, maxDimension = 1600) {
   });
 }
 
-  let photoUrls = [];
-const MAX_PHOTOS = 3;
+  const photoState = {
+  removed:   { urls: [], max: 3 },
+  installed: { urls: [], max: 3 }
+};
+
+  let editingEntryId = null;
+  let editingJournalTs = null;
+
+function generateEntryId() {
+  return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
   
-async function uploadPhotoFile(file) {
-  const statusEl = document.getElementById('uploadStatus');
+async function uploadPhotoFile(file, slot) {
+  const state = photoState[slot];
+  const statusEl = document.getElementById('uploadStatus_' + slot);
   statusEl.style.color = 'black';
   statusEl.textContent = 'Стиснення фото...';
 
@@ -1487,7 +1684,7 @@ async function uploadPhotoFile(file) {
   formData.append('file', fileToUpload, 'photo.jpg');
   formData.append('upload_preset', 'unsigned_preset');
 
-  statusEl.textContent = `Завантаження фото ${photoUrls.length + 1} з ${MAX_PHOTOS}...`;
+  statusEl.textContent = `Завантаження фото ${state.urls.length + 1} з ${state.max}...`;
 
   try {
     const response = await fetch('https://api.cloudinary.com/v1_1/dbmplmdmo/image/upload', {
@@ -1498,11 +1695,11 @@ async function uploadPhotoFile(file) {
     const data = await response.json();
 
     if (data.secure_url) {
-      photoUrls.push(data.secure_url);
-      document.getElementById('photoUrl').value = photoUrls.join('\n');
-      renderPhotoThumbnails();
+      state.urls.push(data.secure_url);
+      document.getElementById('photoUrl_' + slot).value = state.urls.join('\n');
+      renderPhotoThumbnails(slot);
       statusEl.style.color = 'green';
-      statusEl.textContent = `Фото ${photoUrls.length} з ${MAX_PHOTOS} завантажено! (${Math.round(fileToUpload.size/1024)} КБ)`;
+      statusEl.textContent = `Фото ${state.urls.length} з ${state.max} завантажено! (${Math.round(fileToUpload.size/1024)} КБ)`;
     } else {
       statusEl.style.color = 'red';
       statusEl.textContent = 'Помилка завантаження!';
@@ -1515,10 +1712,11 @@ async function uploadPhotoFile(file) {
   }
 }
 
-  function renderPhotoThumbnails() {
-  const container = document.getElementById('photoThumbnails');
+  function renderPhotoThumbnails(slot) {
+  const state = photoState[slot];
+  const container = document.getElementById('photoThumbnails_' + slot);
   container.innerHTML = '';
-  photoUrls.forEach((url, index) => {
+  state.urls.forEach((url, index) => {
     const wrapper = document.createElement('div');
     wrapper.style.cssText = 'position:relative; width:90px; height:90px;';
 
@@ -1529,7 +1727,7 @@ async function uploadPhotoFile(file) {
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.textContent = '✕';
-    delBtn.onclick = () => removePhoto(index);
+    delBtn.onclick = () => removePhoto(slot, index);
     delBtn.style.cssText = 'position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%; background:#e53935; color:white; border:none; font-size:12px; line-height:1; cursor:pointer;';
 
     wrapper.appendChild(img);
@@ -1538,8 +1736,9 @@ async function uploadPhotoFile(file) {
   });
 }
 
-async function removePhoto(index) {
-  const url = photoUrls[index];
+async function removePhoto(slot, index) {
+  const state = photoState[slot];
+  const url = state.urls[index];
   const publicId = extractPublicId(url);
   if (publicId) {
     try {
@@ -1553,13 +1752,115 @@ async function removePhoto(index) {
       debugBox.textContent = 'Помилка запиту: ' + e.message;
     }
   }
-  photoUrls.splice(index, 1);
-  document.getElementById('photoUrl').value = photoUrls.join('\n');
-  renderPhotoThumbnails();
+  state.urls.splice(index, 1);
+  document.getElementById('photoUrl_' + slot).value = state.urls.join('\n');
+  renderPhotoThumbnails(slot);
 
-  const statusEl = document.getElementById('uploadStatus');
+  const statusEl = document.getElementById('uploadStatus_' + slot);
   statusEl.style.color = 'black';
-  statusEl.textContent = `Фото видалено. Залишилось: ${photoUrls.length} з ${MAX_PHOTOS}`;
+  statusEl.textContent = `Фото видалено. Залишилось: ${state.urls.length} з ${state.max}`;
+}
+  function deleteJournalEntry(index, dateStr) {
+  let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
+  const dayEntries = journal.filter(e => new Date(e.ts).toDateString() === dateStr).slice().reverse();
+  const target = dayEntries[index];
+  if (!target) return;
+  journal = journal.filter(e => e.ts !== target.ts);
+  localStorage.setItem('journalPLC', JSON.stringify(journal));
+  updateJournalCount();
+  renderJournalForDate();
+}
+  function startEditEntry(index, dateStr) {
+  let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
+  const dayEntries = journal.filter(e => new Date(e.ts).toDateString() === dateStr).slice().reverse();
+  const e = dayEntries[index];
+  if (!e) return alert('Запис не знайдено');
+  if (!e.entryId) {
+    closeEntryActionsModal();
+    return alert('⚠️ Цей запис створено до оновлення застосунку і не має унікального ID — редагування недоступне для нього. Можна тільки видалити з журналу.');
+  }
+
+  editingEntryId = e.entryId;
+  editingJournalTs = e.ts;
+  currentAccount = e.account;
+
+  document.getElementById('viewAcc1').innerText = e.account;
+  document.getElementById('viewAcc2').innerText = e.account;
+  document.getElementById('viewPib1').innerText = e.pib || '';
+  document.getElementById('viewAddr1').innerText = e.address || '';
+
+  document.getElementById('remType').value = e.removedMeterType || '';
+  document.getElementById('remNum').value = e.removedMeterNumber || '';
+  document.getElementById('remT0').value = e.removedT0 || '';
+  document.getElementById('remT1').value = e.removedT1 || '';
+  document.getElementById('remT2').value = e.removedT2 || '';
+  document.getElementById('remT3').value = e.removedT3 || '';
+  document.getElementById('remLichil').value = e.removedLichil || '';
+  document.getElementById('remFasad1').value = e.removedFasad1 || '';
+  document.getElementById('remFasad2').value = e.removedFasad2 || '';
+  document.getElementById('remVkp').value = e.removedVkp || '';
+  document.getElementById('remOptop').value = e.removedOptop || '';
+  document.getElementById('remImp1').value = e.removedImp1 || '';
+  document.getElementById('remImp2').value = e.removedImp2 || '';
+  document.getElementById('remImp3').value = e.removedImp3 || '';
+  document.getElementById('remOther').value = e.removedOther || '';
+
+  document.getElementById('instType').value = e.installedMeterType || '';
+  document.getElementById('instNum').value = e.installedMeterNumber || '';
+  document.getElementById('instT0').value = e.installedT0 || '';
+  document.getElementById('instT1').value = e.installedT1 || '';
+  document.getElementById('instT2').value = e.installedT2 || '';
+  document.getElementById('instT3').value = e.installedT3 || '';
+  document.getElementById('instLichil').value = e.installedLichil || '';
+  document.getElementById('instFasad1').value = e.installedFasad1 || '';
+  document.getElementById('instFasad2').value = e.installedFasad2 || '';
+  document.getElementById('instVkp').value = e.installedVkp || '';
+  document.getElementById('instOptop').value = e.installedOptop || '';
+  document.getElementById('instImp1').value = e.installedImp1 || '';
+  document.getElementById('instImp2').value = e.installedImp2 || '';
+  document.getElementById('instImp3').value = e.installedImp3 || '';
+  document.getElementById('instOther').value = e.installedOther || '';
+
+  photoState.removed.urls = e.photoUrl ? e.photoUrl.split('\n').filter(u => u.trim()) : [];
+  photoState.installed.urls = e.installedPhotoUrl ? e.installedPhotoUrl.split('\n').filter(u => u.trim()) : [];
+  document.getElementById('photoUrl_removed').value = photoState.removed.urls.join('\n');
+  document.getElementById('photoUrl_installed').value = photoState.installed.urls.join('\n');
+  renderPhotoThumbnails('removed');
+  renderPhotoThumbnails('installed');
+
+  closeEntryActionsModal();
+  document.getElementById('journalModal').classList.add('hidden');
+  showScreen('step1');
+  document.getElementById('btnSaveMain').textContent = '💾 Зберегти зміни';
+}
+  function updateJournalEntryInPlace(payload) {
+  let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
+  const idx = journal.findIndex(e => e.ts === editingJournalTs);
+  if (idx === -1) return;
+  journal[idx] = {
+    ...journal[idx],
+    account: payload.account || '',
+    pib: payload.pib || '',
+    address: payload.address || '',
+    removedMeterType: payload.removedMeterType || '',
+    removedMeterNumber: payload.removedMeterNumber || '',
+    removedT0: payload.removedT0 || '', removedT1: payload.removedT1 || '',
+    removedT2: payload.removedT2 || '', removedT3: payload.removedT3 || '',
+    installedMeterType: payload.installedMeterType || '',
+    installedMeterNumber: payload.installedMeterNumber || '',
+    installedLichil: payload.installedLichil || '',
+    installedFasad1: payload.installedFasad1 || '',
+    installedFasad2: payload.installedFasad2 || '',
+    installedVkp: payload.installedVkp || '',
+    installedOptop: payload.installedOptop || '',
+    installedImp1: payload.installedImp1 || '',
+    installedImp2: payload.installedImp2 || '',
+    installedImp3: payload.installedImp3 || '',
+    photoUrl: payload.photoUrl || '',
+    installedPhotoUrl: payload.installedPhotoUrl || ''
+  };
+  localStorage.setItem('journalPLC', JSON.stringify(journal));
+  updateJournalCount();
 }
   
 </script>
