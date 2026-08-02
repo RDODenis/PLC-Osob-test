@@ -1763,7 +1763,7 @@ async function removePhoto(slot, index) {
   statusEl.style.color = 'black';
   statusEl.textContent = `Фото видалено. Залишилось: ${state.urls.length} з ${state.max}`;
 }
-  async function deleteJournalEntry(index, dateStr) {
+ async function deleteJournalEntry(index, dateStr) {
   let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
   const dayEntries = journal.filter(e => new Date(e.ts).toDateString() === dateStr).slice().reverse();
   const target = dayEntries[index];
@@ -1776,9 +1776,19 @@ async function removePhoto(slot, index) {
     }
     try {
       const res = await sendToGoogle('deleteRow', { data: { entryId: target.entryId, worker: workerTab, account: target.account } });
+
       if (!res || !res.success) {
-        alert('❌ Не вдалося видалити з таблиці: ' + JSON.stringify(res) + '\n\nЗапис у журналі НЕ видалено.');
-        return;
+        const notFound = res && res.message === "Запис із таким ID не знайдено в таблиці";
+
+        if (notFound) {
+          if (!confirm('ℹ️ Цей запис уже видалено з таблиці (можливо, кимось іншим).\n\nВидалити його з журналу застосунку?')) {
+            return;
+          }
+          // проходимо далі — видаляємо тільки з журналу
+        } else {
+          alert('❌ Не вдалося видалити з таблиці: ' + JSON.stringify(res) + '\n\nЗапис у журналі НЕ видалено.');
+          return;
+        }
       }
     } catch (e) {
       alert('❌ Помилка з\'єднання. Рядок у таблиці не видалено, запис у журналі НЕ видалено.');
@@ -1789,6 +1799,12 @@ async function removePhoto(slot, index) {
       return;
     }
   }
+
+  journal = journal.filter(e => e.ts !== target.ts);
+  localStorage.setItem('journalPLC', JSON.stringify(journal));
+  updateJournalCount();
+  renderJournalForDate();
+}
 
   journal = journal.filter(e => e.ts !== target.ts);
   localStorage.setItem('journalPLC', JSON.stringify(journal));
