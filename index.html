@@ -1777,7 +1777,7 @@ async function removePhoto(slot, index) {
     try {
       const res = await sendToGoogle('deleteRow', { entryId: target.entryId, worker: workerTab, account: target.account });
       if (!res || !res.success) {
-        alert('❌ Не вдалося видалити з таблиці: ' + (res && res.message ? res.message : 'невідома помилка') + '\n\nЗапис у журналі НЕ видалено.');
+        alert('❌ Не вдалося видалити з таблиці: ' + JSON.stringify(res) + '\n\nЗапис у журналі НЕ видалено.');
         return;
       }
     } catch (e) {
