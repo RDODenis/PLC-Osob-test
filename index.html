@@ -435,7 +435,7 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 // ==========================================
 // ⚠️ ТУТ ВСТАВ ПОСИЛАННЯ З GOOGLE APPS SCRIPT
 // ==========================================
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGgjWcCSIGjUL_kOEBeJ87UTPbh-B-WFAXfRlEfck6gE-6o2f9OZoDSzhZcm_mJmgU/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrIALxrKmgtoRr0BH-8QEOVprSyT9liNydEgGO8BN22erULqYfGsm9X0devi0-LLgK0Q/exec; 
 
 // ==========================================
 // ОПТИМІЗОВАНИЙ МІСТ ДЛЯ ШВИДКОГО ЗВ'ЯЗКУ
@@ -1354,12 +1354,14 @@ function closeEntryActionsModal() {
   currentEntryContext = null;
 }
 
-document.getElementById('btnDeleteEntry').addEventListener('click', function() {
+document.getElementById('btnDeleteEntry').addEventListener('click', async function() {
   if (!currentEntryContext) return;
-  if (confirm('Видалити цей запис із журналу?\n\nУ Google Таблиці запис ЗАЛИШИТЬСЯ без змін — видаляється тільки з журналу застосунку.')) {
-    deleteJournalEntry(currentEntryContext.index, currentEntryContext.dateStr);
+  if (confirm('⚠️ Видалити цей запис ПОВНІСТЮ?\n\nРядок буде видалено з Google Таблиці назавжди, це неможливо скасувати. Потрібен інтернет.')) {
+    closeEntryActionsModal();
+    await deleteJournalEntry(currentEntryContext.index, currentEntryContext.dateStr);
+  } else {
+    closeEntryActionsModal();
   }
-  closeEntryActionsModal();
 });
 
 document.getElementById('btnEditEntry').addEventListener('click', function() {
@@ -1760,11 +1762,33 @@ async function removePhoto(slot, index) {
   statusEl.style.color = 'black';
   statusEl.textContent = `Фото видалено. Залишилось: ${state.urls.length} з ${state.max}`;
 }
-  function deleteJournalEntry(index, dateStr) {
+  async function deleteJournalEntry(index, dateStr) {
   let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
   const dayEntries = journal.filter(e => new Date(e.ts).toDateString() === dateStr).slice().reverse();
   const target = dayEntries[index];
   if (!target) return;
+
+  if (target.entryId) {
+    if (!navigator.onLine) {
+      alert('⚠️ Для видалення запису потрібен інтернет. Спробуйте, коли з\'явиться з\'єднання.');
+      return;
+    }
+    try {
+      const res = await sendToGoogle('deleteRow', { entryId: target.entryId, worker: workerTab, account: target.account });
+      if (!res || !res.success) {
+        alert('❌ Не вдалося видалити з таблиці: ' + (res && res.message ? res.message : 'невідома помилка') + '\n\nЗапис у журналі НЕ видалено.');
+        return;
+      }
+    } catch (e) {
+      alert('❌ Помилка з\'єднання. Рядок у таблиці не видалено, запис у журналі НЕ видалено.');
+      return;
+    }
+  } else {
+    if (!confirm('Цей запис створено до оновлення застосунку — рядок у таблиці видалити автоматично не можна (немає ID). Видалити лише з журналу?')) {
+      return;
+    }
+  }
+
   journal = journal.filter(e => e.ts !== target.ts);
   localStorage.setItem('journalPLC', JSON.stringify(journal));
   updateJournalCount();
