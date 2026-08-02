@@ -1775,7 +1775,7 @@ async function removePhoto(slot, index) {
       return;
     }
     try {
-      const res = await sendToGoogle('deleteRow', { entryId: target.entryId, worker: workerTab, account: target.account });
+      const res = await sendToGoogle('deleteRow', { data: { entryId: target.entryId, worker: workerTab, account: target.account } });
       if (!res || !res.success) {
         alert('❌ Не вдалося видалити з таблиці: ' + JSON.stringify(res) + '\n\nЗапис у журналі НЕ видалено.');
         return;
