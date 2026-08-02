@@ -1806,11 +1806,6 @@ async function removePhoto(slot, index) {
   renderJournalForDate();
 }
 
-  journal = journal.filter(e => e.ts !== target.ts);
-  localStorage.setItem('journalPLC', JSON.stringify(journal));
-  updateJournalCount();
-  renderJournalForDate();
-}
   function startEditEntry(index, dateStr) {
   let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
   const dayEntries = journal.filter(e => new Date(e.ts).toDateString() === dateStr).slice().reverse();
