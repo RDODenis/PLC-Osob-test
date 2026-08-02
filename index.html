@@ -1356,9 +1356,10 @@ function closeEntryActionsModal() {
 
 document.getElementById('btnDeleteEntry').addEventListener('click', async function() {
   if (!currentEntryContext) return;
+  const { index, dateStr } = currentEntryContext;
   if (confirm('⚠️ Видалити цей запис ПОВНІСТЮ?\n\nРядок буде видалено з Google Таблиці назавжди, це неможливо скасувати. Потрібен інтернет.')) {
     closeEntryActionsModal();
-    await deleteJournalEntry(currentEntryContext.index, currentEntryContext.dateStr);
+    await deleteJournalEntry(index, dateStr);
   } else {
     closeEntryActionsModal();
   }
