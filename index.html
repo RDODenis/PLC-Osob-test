@@ -113,6 +113,10 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 .journal-top-mid { flex:1; display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; }
 .journal-acc, .journal-time { white-space:nowrap; }
 
+.icon-form svg { fill:#9e9e9e; }
+.icon-form.pending svg { fill:#f9a825; }
+.icon-form.submitted svg { fill:#43a047; }
+
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; display:flex; align-items:center; justify-content:center; }
 .modal-overlay.hidden { display:none; }
 .modal-card { background:white; border-radius:12px; padding:20px; width:85%; max-width:320px; text-align:center; }
@@ -435,7 +439,7 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 // ==========================================
 // ⚠️ ТУТ ВСТАВ ПОСИЛАННЯ З GOOGLE APPS SCRIPT
 // ==========================================
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJqOPUv0FmrtHfsUaU3oUz0qCnPp6k4WblBJ5jwzidtFWji2VflMYi8u-bN-VV1ASYZw/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyw5Y1I14NhLA8ez-EVOk4Bj5dDSXtsmo05FrK42kUHygVLkcV3DCp7bP_maIYRta3LeQ/exec"; 
 
 // ==========================================
 // ОПТИМІЗОВАНИЙ МІСТ ДЛЯ ШВИДКОГО ЗВ'ЯЗКУ
@@ -460,6 +464,140 @@ async function sendToGoogle(action, payloadData = {}) {
   }
 }
 
+  const GOOGLE_FORM_METER_TYPES = [
+  "AD11A.1-5-1","EMH ED2500","GAMMA 100 G1B","GAMMA 300","GROSS DDS-UA","ISKRA ME162-D1A44-V12L11-M2KO","ITZ",
+  "Landis Gur L550","Landis ZCG110ATt","Landis310","MCS301-CE51B 30MIS-004 000","MTX 1A10.DF.2LO-CO4","MTX 1A10.DF.2LO-YO4",
+  "MTX 1A10.DF.2ZO-CD4","MTX 1A10.DF.2ZO-CO4","MTX 3A 10.DF.4Z1-C4","MTX 3A 10.DG.4Z3-CD4","MTX 3A 10.DH.4Z1-CD4",
+  "NIK 2100 AP2.0000.0.11","NIK 2100 АР2Т.1000.С.11","NIK 2100 АР2Т.1002.МС.11","NIK 2100 АР2Т.1002.С.11",
+  "NIK 2100 АР6Т.1002.МС.11","NIK 2100 АР6Т.2000.МС.11","NIK 2100 АР6Т.2002.МС.11","NIK 2100 АР6Т.2802.МС.11",
+  "NIK 2100 АР2Т.2802.МС.11","NIK 2100 АР6Т.2902.МС.11","NIK 2104 АР2Т.1000.М.11","NIK 2104 АР2Т.1000.С.11",
+  "NIK 2104 АР2Т.1002.МС.11","NIK 2104 АР2Т.1802.МС.11","NIK 2104 АР2ТВ.1802.М.11","NIK 2104 АР6Т.2602.МС.21",
+  "NIK 2300 AP6T.1000.C.11","NIK 2300 ARP3T.2900 МС 21","NIK 2300 AТТ.2900 МС 21","NIK 2300 АRTT.2902.МС.11",
+  "NIK 2300 АР3.2000.MC.11","NIK 2300 АР3T.2000.МС.11","NIK 2300 АР6Т.2002.МС.11","NIK 2300 АР6Т.2802.МС.11",
+  "NIK 2300 АР6Т.2902.МС.11","NIK 2301 АР3.0 0000.0.11","NIK 2303 ARP3T.1202.МС.11","NIK 2303 ARP3T.1802.МС.11",
+  "NIK 2303 ARP6T.1002.МС.11","NIK 2303 ARP6T.1800.МС.11","NIK 2303 ARТ Т.1800.МС.11","NIK 2303 AТ Т.1800.МС.21",
+  "NIK 2303 АRР3Т.1802.МС.11","NIK 2303 АRР3Т.1802.МС.21","NIK 2303 АRР6Т.1802.МС.11","NIK 2303 АР3Т.1000.МС.11",
+  "NIK 2303 АР3Т.1002.МС.11","NIK 2303 АР3Т.1802.МС.11","NIK 2303 АР3Т.2000.МС.11","NIK 2303 АР6Т.1000.МС.11",
+  "NIK 2303 АР6Т.1000.С.11","NIK 2303 АР6Т.1002.МС.11","NIK 2303 АР6Т.1802.МС.11","NIK 2303 АР6Т.1802МС.21",
+  "NIK 2303 АР6Т.2000.МС.11","NIK 2307 0.5s ARTT.1600.MC.21","NIK 2307 ARP3Т.1602.М.21","NIK 2307 ARP3Т.1602.МC.21",
+  "NIK 2307 ARP3Т.1602.МС.21","NIK 2308 ARP3 T.1620.MC.21","NP-06 TD MME 1F 2S-U","NP-06 TD MME 1F 3S-U",
+  "АСЕ-3000","ЛЭО","ЛЭО-М1.4","МЕРИДІАН ЛТЕ-1.03","МЕРИДІАН ЛТЕ-1.03Т","МЕРИДІАН ЛТЕ-1.03ТУ","Меркурій 200",
+  "Меркурій 200.02","Меркурій 201","Меркурій 206","МЕРКУРІЙ 231 АТ-01","НІК 2102-01.Е2МСТ","НІК 2102-01.Е2Р1",
+  "НІК 2102-01.Е2СТ","НІК 2102-01.Е2МТ","НІК 2102-01.Е2МТ1","НІК 2102-01.Е2Т","НІК 2102-01.Е2ТР1","НІК 2102-02.М1",
+  "НІК 2102-02.М1В","НІК 2102-02.М2","НІК 2102-02.М2В","НІК 2301 АП1","НІК 2303 АП2","НІК 2301 АП2В","НІК 2301 АП3",
+  "НІК 2301 АП3В","НІК 2303 АП2Т","НІК 2303 АП3Т","НІК 2303L АП1Т","НІК 2303L АП6","НІК 2303L АП6Т","СА4-195",
+  "СА4-И672п","СО-193","СО-197","СО-197М","СО-2","СО-2М","СО-5У","СОЕА09М","СО-И446","СО-И446М","СО-И449",
+  "СО-И449М1","СО-И449М1-1","СО-И449М1-2","СО-И449Т","СО-И6101","СОЭ-1.02/2","СОЭ-1.02/2КРТ","СОЭ-1.02/2КТ",
+  "СОЭ-1.02/2Т","СОЭ-1.02/5КРТД","СО-ЭА10Д","СО-ЭЭ6705","СО-ЭЭ6706","СТ-ЭА05","СТ-ЭА08М","ЦЭ6807Бк",
+  "ЭНЕРГОМЕРА СЕ 102М"
+];
+
+function normalizeMeterTypeForForm(rawType) {
+  if (!rawType) return '';
+  if (GOOGLE_FORM_METER_TYPES.includes(rawType)) return rawType;
+
+  const norm = s => s.toUpperCase().replace(/\s+/g, ' ').trim();
+  const target = norm(rawType);
+
+  const exact = GOOGLE_FORM_METER_TYPES.find(t => norm(t) === target);
+  if (exact) return exact;
+
+  const candidates = GOOGLE_FORM_METER_TYPES.filter(t => norm(t).includes(target) || target.includes(norm(t)));
+  if (candidates.length === 1) return candidates[0];
+
+  return ''; // немає точного збігу — краще порожньо, ніж хибно
+}
+  const GOOGLE_FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSfj1wXEHe0VsHAmkIY_MWK_a9cbzDgyIPmPJ3h1lCijIwAL-A/viewform';
+
+function buildFormReadingsString(t0, t1, t2, t3) {
+  return [t0, t1, t2, t3].filter(v => v).join('/') || '';
+}
+
+function buildGoogleFormUrl(e) {
+  const d = new Date(e.ts);
+  const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+  const params = {
+    'usp': 'pp_url',
+    'entry.1010154509': dateStr,
+    'entry.1609399626': 'Заміна лічильника',
+    'entry.203178877': '', // Підстава заміни — не зберігається в журналі, лишаємо порожнім
+    'entry.1583379400': workerTab || '',
+    'entry.244962092': e.account || '',
+
+    'entry.155422969': normalizeMeterTypeForForm(e.removedMeterType),
+    'entry.1262021573': e.removedMeterNumber || '',
+    'entry.1666715724': buildFormReadingsString(e.removedT0, e.removedT1, e.removedT2, e.removedT3),
+    'entry.980914247': e.removedLichil || '',
+    'entry.1281985427': e.removedVkp || '',
+    'entry.1571141896': e.removedFasad1 || '',
+    'entry.950038743': e.removedFasad2 || '',
+    'entry.1825187506': e.removedOptop || '',
+    'entry.851707833': e.removedImp1 || '',
+    'entry.1653188291': e.removedImp2 || '',
+    'entry.174981808': e.removedImp3 || '',
+
+    'entry.1958360409': normalizeMeterTypeForForm(e.installedMeterType),
+    'entry.591456354': e.installedMeterNumber || '',
+    'entry.686446183': buildFormReadingsString(e.installedT0, e.installedT1, e.installedT2, e.installedT3),
+    'entry.1577377109': e.installedLichil || '',
+    'entry.1292803469': e.installedVkp || '',
+    'entry.1309070612': e.installedFasad1 || '',
+    'entry.1176747559': e.installedFasad2 || '',
+    'entry.67142835': e.installedOptop || '',
+    'entry.245114888': e.installedImp1 || '',
+    'entry.1581321253': e.installedImp2 || '',
+    'entry.865785872': e.installedImp3 || ''
+  };
+
+  const query = Object.entries(params)
+    .filter(([_, v]) => v !== undefined && v !== '')
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+
+  return `${GOOGLE_FORM_BASE}?${query}`;
+}
+  let formStatusMap = JSON.parse(localStorage.getItem('formStatusMap') || '{}');
+
+function getFormState(entryId) {
+  return formStatusMap[entryId] || 'idle';
+}
+function setFormState(entryId, state) {
+  formStatusMap[entryId] = state;
+  localStorage.setItem('formStatusMap', JSON.stringify(formStatusMap));
+}
+
+async function handleFormIconClick(index, dateStr) {
+  let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
+  const dayEntries = journal.filter(e => new Date(e.ts).toDateString() === dateStr).slice().reverse();
+  const e = dayEntries[index];
+  if (!e) return;
+  if (!e.entryId) return alert('⚠️ Цей запис створено до оновлення застосунку — автозаповнення форми недоступне.');
+
+  const state = getFormState(e.entryId);
+
+  if (state === 'idle') {
+    window.open(buildGoogleFormUrl(e), '_blank');
+    setFormState(e.entryId, 'pending');
+    renderJournalForDate();
+    setTimeout(() => alert('📋 Заповніть форму і натисніть "Надіслати" в кінці.\n\nПотім поверніться сюди й торкніться цієї ж іконки ще раз, щоб позначити як відправлено.'), 300);
+  } else if (state === 'pending') {
+    if (confirm('Підтвердити, що форму заповнено і надіслано?')) {
+      setFormState(e.entryId, 'submitted');
+      renderJournalForDate();
+      if (navigator.onLine) {
+        try {
+          await sendToGoogle('updateFormStatus', { data: { entryId: e.entryId, formSubmitted: true } });
+        } catch (err) {
+          console.warn('Не вдалося оновити статус форми на сервері', err);
+        }
+      }
+    }
+  } else {
+    window.open(buildGoogleFormUrl(e), '_blank'); // вже відправлено — повторний клік просто відкриває форму знову
+  }
+}
+  
 const METER_TYPES = [
   "НІК 2102-02.М2В", "NIK2104 AP2T.1802.MC.11", "СОЭ-1.02/2", "СОЭ-1.02/2Т", "ЛЕО", "СО-ЭА10Д", "AD11A.1-5-1", 
   "EMH ED2500", "GAMMA 100 G1B", "GAMMA 300", "ISKRA ME162-D1A44-V12L11-M2KO", "ITZ", "Landis Gur L550", 
@@ -1436,6 +1574,9 @@ function renderJournalForDate() {
           <span class="journal-acc">О/р: ${e.account}</span>
           <span class="journal-time">${timeStr} ${badge}</span>
         </div>
+        <button class="icon-btn icon-form ${e.entryId && getFormState(e.entryId) === 'submitted' ? 'submitted' : e.entryId && getFormState(e.entryId) === 'pending' ? 'pending' : ''}" onclick="handleFormIconClick(${i}, '${selectedDate}')" title="Відправити в Google Форму">
+  <svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+</button>
         <button class="icon-btn icon-delete" onclick="openEntryActions(${i}, '${selectedDate}')" title="Дії із записом">
           <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
         </button>
