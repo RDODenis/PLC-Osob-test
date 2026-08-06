@@ -588,7 +588,11 @@ async function handleFormIconClick(index, dateStr) {
   const state = getFormState(e.entryId);
 
   if (state === 'idle') {
-    window.open(buildGoogleFormUrl(e), '_blank');
+    const formUrl = buildGoogleFormUrl(e);// тимчасова заміна
+    console.log('URL форми:', formUrl);
+    alert(formUrl);
+    window.open(formUrl, '_blank');
+    
     setFormState(e.entryId, 'pending');
     renderJournalForDate();
     setTimeout(() => alert('📋 Заповніть форму і натисніть "Надіслати" в кінці.\n\nПотім поверніться сюди й торкніться цієї ж іконки ще раз, щоб позначити як відправлено.'), 300);
