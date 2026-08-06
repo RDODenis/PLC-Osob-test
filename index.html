@@ -499,16 +499,34 @@ function canonicalizeMeterType(s) {
   return str.split('').map(ch => map[ch] || ch).join('');
 }
 
+// Словник ручних винятків: "як зберігається в застосунку" → "точна назва зі списку форми"
+// Додавай сюди нові пари, коли знайдеш черговий випадок розбіжності написання
+const METER_TYPE_ALIASES = {
+  'ЛЕО': 'ЛЭО',
+  'ЛЕО-М1.4': 'ЛЭО-М1.4'
+};
+
 function normalizeMeterTypeForForm(rawType) {
   if (!rawType) return '';
-  const target = canonicalizeMeterType(rawType);
+  const trimmed = rawType.trim();
 
-  const exact = GOOGLE_FORM_METER_TYPES.find(t => canonicalizeMeterType(t) === target);
+  // 1. Спершу перевіряємо ручний словник — і точний збіг, і канонізований
+  if (METER_TYPE_ALIASES[trimmed]) return METER_TYPE_ALIASES[trimmed];
+  const targetCanon = canonicalizeMeterType(trimmed);
+  for (const key in METER_TYPE_ALIASES) {
+    if (canonicalizeMeterType(key) === targetCanon) return METER_TYPE_ALIASES[key];
+  }
+
+  // 2. Точний збіг зі списком форми
+  if (GOOGLE_FORM_METER_TYPES.includes(trimmed)) return trimmed;
+
+  // 3. Автоматичний пошук через уніфікацію кирилиця/латиниця
+  const exact = GOOGLE_FORM_METER_TYPES.find(t => canonicalizeMeterType(t) === targetCanon);
   if (exact) return exact;
 
   const candidates = GOOGLE_FORM_METER_TYPES.filter(t => {
     const c = canonicalizeMeterType(t);
-    return c.includes(target) || target.includes(c);
+    return c.includes(targetCanon) || targetCanon.includes(c);
   });
   if (candidates.length === 1) return candidates[0];
 
