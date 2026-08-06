@@ -611,11 +611,8 @@ async function handleFormIconClick(index, dateStr) {
 
   const state = getFormState(e.entryId);
 
-  if (state === 'idle') {
-    const formUrl = buildGoogleFormUrl(e);// тимчасова заміна
-    console.log('URL форми:', formUrl);
-    alert(formUrl);
-    window.open(formUrl, '_blank');
+if (state === 'idle') {
+    window.open(buildGoogleFormUrl(e), '_blank');
     
     setFormState(e.entryId, 'pending');
     renderJournalForDate();
