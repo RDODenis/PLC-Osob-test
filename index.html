@@ -510,6 +510,12 @@ function normalizeMeterTypeForForm(rawType) {
   if (!rawType) return '';
   const trimmed = rawType.trim();
 
+  console.log('Реальне значення:', JSON.stringify(trimmed));
+  console.log('Коди символів:', trimmed.split('').map(c => c.charCodeAt(0)).join(','));
+  console.log('Є в словнику напряму?', METER_TYPE_ALIASES.hasOwnProperty(trimmed));
+
+  // ... решта функції без змін
+
   // 1. Спершу перевіряємо ручний словник — і точний збіг, і канонізований
   if (METER_TYPE_ALIASES[trimmed]) return METER_TYPE_ALIASES[trimmed];
   const targetCanon = canonicalizeMeterType(trimmed);
