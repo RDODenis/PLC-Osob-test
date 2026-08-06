@@ -492,20 +492,27 @@ async function sendToGoogle(action, payloadData = {}) {
   "ЭНЕРГОМЕРА СЕ 102М"
 ];
 
+function canonicalizeMeterType(s) {
+  if (!s) return '';
+  let str = s.toUpperCase().replace(/\s+/g, '');
+  const map = { 'А':'A','В':'B','Е':'E','К':'K','М':'M','Н':'H','О':'O','Р':'P','С':'C','Т':'T','Х':'X','У':'Y','І':'I' };
+  return str.split('').map(ch => map[ch] || ch).join('');
+}
+
 function normalizeMeterTypeForForm(rawType) {
   if (!rawType) return '';
-  if (GOOGLE_FORM_METER_TYPES.includes(rawType)) return rawType;
+  const target = canonicalizeMeterType(rawType);
 
-  const norm = s => s.toUpperCase().replace(/\s+/g, ' ').trim();
-  const target = norm(rawType);
-
-  const exact = GOOGLE_FORM_METER_TYPES.find(t => norm(t) === target);
+  const exact = GOOGLE_FORM_METER_TYPES.find(t => canonicalizeMeterType(t) === target);
   if (exact) return exact;
 
-  const candidates = GOOGLE_FORM_METER_TYPES.filter(t => norm(t).includes(target) || target.includes(norm(t)));
+  const candidates = GOOGLE_FORM_METER_TYPES.filter(t => {
+    const c = canonicalizeMeterType(t);
+    return c.includes(target) || target.includes(c);
+  });
   if (candidates.length === 1) return candidates[0];
 
-  return ''; // немає точного збігу — краще порожньо, ніж хибно
+  return '';
 }
   const GOOGLE_FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSfj1wXEHe0VsHAmkIY_MWK_a9cbzDgyIPmPJ3h1lCijIwAL-A/viewform';
 
@@ -521,7 +528,7 @@ function buildGoogleFormUrl(e) {
     'usp': 'pp_url',
     'entry.1010154509': dateStr,
     'entry.1609399626': 'Заміна лічильника',
-    'entry.203178877': '', // Підстава заміни — не зберігається в журналі, лишаємо порожнім
+    'entry.203178877': 'ІП (PLC)',
     'entry.1583379400': workerTab || '',
     'entry.244962092': e.account || '',
 
@@ -533,18 +540,22 @@ function buildGoogleFormUrl(e) {
     'entry.1571141896': e.removedFasad1 || '',
     'entry.950038743': e.removedFasad2 || '',
     'entry.1825187506': e.removedOptop || '',
+    'entry.1564992043': e.removedOther || '',// Знята пломба (додатково1)
+    'entry.73553193': '',// Знята пломба (додатково2) — немає окремих даних, лишається порожнім
     'entry.851707833': e.removedImp1 || '',
     'entry.1653188291': e.removedImp2 || '',
     'entry.174981808': e.removedImp3 || '',
 
     'entry.1958360409': normalizeMeterTypeForForm(e.installedMeterType),
     'entry.591456354': e.installedMeterNumber || '',
-    'entry.686446183': buildFormReadingsString(e.installedT0, e.installedT1, e.installedT2, e.installedT3),
+    'entry.686446183': '0000000/0000000/0000000',
     'entry.1577377109': e.installedLichil || '',
     'entry.1292803469': e.installedVkp || '',
     'entry.1309070612': e.installedFasad1 || '',
     'entry.1176747559': e.installedFasad2 || '',
     'entry.67142835': e.installedOptop || '',
+    'entry.1726388226': e.installedOther || '',// Встановлена пломба (додатково1)
+    'entry.843072666': '',// Встановлена пломба (додатково2) — немає окремих даних, лишається порожнім
     'entry.245114888': e.installedImp1 || '',
     'entry.1581321253': e.installedImp2 || '',
     'entry.865785872': e.installedImp3 || ''
@@ -1466,9 +1477,19 @@ function addToJournal(payload, status) {
     installedImp1: payload.installedImp1 || '',
     installedImp2: payload.installedImp2 || '',
     installedImp3: payload.installedImp3 || '',
+    removedLichil: payload.removedLichil || '',
+    removedFasad1: payload.removedFasad1 || '',
+    removedFasad2: payload.removedFasad2 || '',
+    removedVkp: payload.removedVkp || '',
+    removedOptop: payload.removedOptop || '',
+    removedImp1: payload.removedImp1 || '',
+    removedImp2: payload.removedImp2 || '',
+    removedImp3: payload.removedImp3 || '',
     photoUrl: payload.photoUrl || '',
     installedPhotoUrl: payload.installedPhotoUrl || '',
     entryId: payload.entryId || ''
+    removedOther: payload.removedOther || '',
+    installedOther: payload.installedOther || '',
   });
   localStorage.setItem('journalPLC', JSON.stringify(journal));
   updateJournalCount();
