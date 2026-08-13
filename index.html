@@ -503,25 +503,34 @@ function canonicalizeMeterType(s) {
 // Додавай сюди нові пари, коли знайдеш черговий випадок розбіжності написання
 const METER_TYPE_ALIASES = {
   'ЛЕО': 'ЛЭО',
-  'ЛЕО-М1.4': 'ЛЭО-М1.4'
+  'ЛЕО-М1.4': 'ЛЭО-М1.4',
+  'НІК 2102 01.Е2ТР1': 'НІК 2102-01.Е2ТР1',
+  'СО-ЭА09М2': 'СОЕА09М'
 };
 
 function normalizeMeterTypeForForm(rawType) {
   if (!rawType) return '';
   const trimmed = rawType.trim();
-
-  console.log('Реальне значення:', JSON.stringify(trimmed));
-  console.log('Коди символів:', trimmed.split('').map(c => c.charCodeAt(0)).join(','));
-  console.log('Є в словнику напряму?', METER_TYPE_ALIASES.hasOwnProperty(trimmed));
-
-  // ... решта функції без змін
-
-  // 1. Спершу перевіряємо ручний словник — і точний збіг, і канонізований
-  if (METER_TYPE_ALIASES[trimmed]) return METER_TYPE_ALIASES[trimmed];
   const targetCanon = canonicalizeMeterType(trimmed);
+
+  // 1. Ручний словник винятків — порівнюємо канонізовано, регістр і кирилиця/латиниця не важливі
   for (const key in METER_TYPE_ALIASES) {
     if (canonicalizeMeterType(key) === targetCanon) return METER_TYPE_ALIASES[key];
   }
+
+  // 2. Пошук у списку форми — теж канонізовано
+  const exact = GOOGLE_FORM_METER_TYPES.find(t => canonicalizeMeterType(t) === targetCanon);
+  if (exact) return exact;
+
+  // 3. Частковий збіг (підрядок), якщо точного нема
+  const candidates = GOOGLE_FORM_METER_TYPES.filter(t => {
+    const c = canonicalizeMeterType(t);
+    return c.includes(targetCanon) || targetCanon.includes(c);
+  });
+  if (candidates.length === 1) return candidates[0];
+
+  return '';
+}
 
   // 2. Точний збіг зі списком форми
   if (GOOGLE_FORM_METER_TYPES.includes(trimmed)) return trimmed;
