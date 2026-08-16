@@ -532,21 +532,6 @@ function normalizeMeterTypeForForm(rawType) {
   return '';
 }
 
-  // 2. Точний збіг зі списком форми
-  if (GOOGLE_FORM_METER_TYPES.includes(trimmed)) return trimmed;
-
-  // 3. Автоматичний пошук через уніфікацію кирилиця/латиниця
-  const exact = GOOGLE_FORM_METER_TYPES.find(t => canonicalizeMeterType(t) === targetCanon);
-  if (exact) return exact;
-
-  const candidates = GOOGLE_FORM_METER_TYPES.filter(t => {
-    const c = canonicalizeMeterType(t);
-    return c.includes(targetCanon) || targetCanon.includes(c);
-  });
-  if (candidates.length === 1) return candidates[0];
-
-  return '';
-}
   const GOOGLE_FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSfj1wXEHe0VsHAmkIY_MWK_a9cbzDgyIPmPJ3h1lCijIwAL-A/viewform';
 
 function buildFormReadingsString(t0, t1, t2, t3) {
