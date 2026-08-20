@@ -494,9 +494,8 @@ async function sendToGoogle(action, payloadData = {}) {
 
 function canonicalizeMeterType(s) {
   if (!s) return '';
-  // Правило 1: верхній регістр, прибрати всі пробіли
-  let str = s.toUpperCase().replace(/\s+/g, '');
-  // Правило 2: уніфікація кирилиця <-> латиниця (літери-двійники)
+  // Ігноруємо пробіли, крапки й дефіси — всі три зустрічаються як роздільники непослідовно
+  let str = s.toUpperCase().replace(/[\s.\-]+/g, '');
   const map = { 'А':'A','В':'B','Е':'E','К':'K','М':'M','Н':'H','О':'O','Р':'P','С':'C','Т':'T','Х':'X','У':'Y','І':'I' };
   return str.split('').map(ch => map[ch] || ch).join('');
 }
