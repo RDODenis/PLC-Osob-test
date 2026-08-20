@@ -494,13 +494,13 @@ async function sendToGoogle(action, payloadData = {}) {
 
 function canonicalizeMeterType(s) {
   if (!s) return '';
+  // Правило 1: верхній регістр, прибрати всі пробіли
   let str = s.toUpperCase().replace(/\s+/g, '');
+  // Правило 2: уніфікація кирилиця <-> латиниця (літери-двійники)
   const map = { 'А':'A','В':'B','Е':'E','К':'K','М':'M','Н':'H','О':'O','Р':'P','С':'C','Т':'T','Х':'X','У':'Y','І':'I' };
   return str.split('').map(ch => map[ch] || ch).join('');
 }
 
-// Словник ручних винятків: "як зберігається в застосунку" → "точна назва зі списку форми"
-// Додавай сюди нові пари, коли знайдеш черговий випадок розбіжності написання
 const METER_TYPE_ALIASES = {
   'ЛЕО': 'ЛЭО',
   'ЛЕО-М1.4': 'ЛЭО-М1.4',
@@ -510,25 +510,21 @@ const METER_TYPE_ALIASES = {
 
 function normalizeMeterTypeForForm(rawType) {
   if (!rawType) return '';
-  const trimmed = rawType.trim();
-  const targetCanon = canonicalizeMeterType(trimmed);
+  const targetCanon = canonicalizeMeterType(rawType);
 
-  // 1. Ручний словник винятків — порівнюємо канонізовано, регістр і кирилиця/латиниця не важливі
+  // Правило 3: словник винятків — ПЕРШИЙ і остаточний пріоритет.
+  // Якщо знайшли тут — інші правила НЕ застосовуємо, повертаємо одразу.
   for (const key in METER_TYPE_ALIASES) {
-    if (canonicalizeMeterType(key) === targetCanon) return METER_TYPE_ALIASES[key];
+    if (canonicalizeMeterType(key) === targetCanon) {
+      return METER_TYPE_ALIASES[key];
+    }
   }
 
-  // 2. Пошук у списку форми — теж канонізовано
+  // Далі — пошук у списку форми через канонізацію (правила 1+2)
   const exact = GOOGLE_FORM_METER_TYPES.find(t => canonicalizeMeterType(t) === targetCanon);
   if (exact) return exact;
 
-  // 3. Частковий збіг (підрядок), якщо точного нема
-  const candidates = GOOGLE_FORM_METER_TYPES.filter(t => {
-    const c = canonicalizeMeterType(t);
-    return c.includes(targetCanon) || targetCanon.includes(c);
-  });
-  if (candidates.length === 1) return candidates[0];
-
+  // Точного збігу нема — краще порожньо, ніж підставити щось хибне
   return '';
 }
 
@@ -624,6 +620,12 @@ if (state === 'idle') {
       }
     }
   } else {
+    if (state === 'idle') {
+    const remResult = normalizeMeterTypeForForm(e.removedMeterType);
+    const instResult = normalizeMeterTypeForForm(e.installedMeterType);
+    if (!remResult || !instResult) {
+      alert('ДІАГНОСТИКА:\nЗнятий (сирий): [' + e.removedMeterType + ']\nЗнятий (результат): [' + remResult + ']\n\nВстановлений (сирий): [' + e.installedMeterType + ']\nВстановлений (результат): [' + instResult + ']');
+    }
     window.open(buildGoogleFormUrl(e), '_blank'); // вже відправлено — повторний клік просто відкриває форму знову
   }
 }
