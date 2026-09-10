@@ -2054,7 +2054,7 @@ async function removePhoto(slot, index) {
   showScreen('step1');
   document.getElementById('btnSaveMain').textContent = '💾 Зберегти зміни';
 }
-  function updateJournalEntryInPlace(payload) {
+   function updateJournalEntryInPlace(payload) {
   let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
   const idx = journal.findIndex(e => e.ts === editingJournalTs);
   if (idx === -1) return;
@@ -2067,6 +2067,15 @@ async function removePhoto(slot, index) {
     removedMeterNumber: payload.removedMeterNumber || '',
     removedT0: payload.removedT0 || '', removedT1: payload.removedT1 || '',
     removedT2: payload.removedT2 || '', removedT3: payload.removedT3 || '',
+    removedLichil: payload.removedLichil || '',
+    removedFasad1: payload.removedFasad1 || '',
+    removedFasad2: payload.removedFasad2 || '',
+    removedVkp: payload.removedVkp || '',
+    removedOptop: payload.removedOptop || '',
+    removedImp1: payload.removedImp1 || '',
+    removedImp2: payload.removedImp2 || '',
+    removedImp3: payload.removedImp3 || '',
+    removedOther: payload.removedOther || '',
     installedMeterType: payload.installedMeterType || '',
     installedMeterNumber: payload.installedMeterNumber || '',
     installedLichil: payload.installedLichil || '',
@@ -2077,6 +2086,7 @@ async function removePhoto(slot, index) {
     installedImp1: payload.installedImp1 || '',
     installedImp2: payload.installedImp2 || '',
     installedImp3: payload.installedImp3 || '',
+    installedOther: payload.installedOther || '',
     photoUrl: payload.photoUrl || '',
     installedPhotoUrl: payload.installedPhotoUrl || ''
   };
