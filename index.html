@@ -1628,10 +1628,10 @@ function renderJournalForDate() {
             <div class="journal-meters">
         Знятий: ${e.removedMeterType} ${e.removedMeterNumber}<br>${buildReadingsLine(e) ? `<b>${buildReadingsLine(e)}</b><br>` : ''}
         ${e.photoUrl ? e.photoUrl.split('\n').filter(u => u.trim()).map((u, idx, arr) => `<a href="${u}" target="_blank" style="color:#1565c0;text-decoration:underline;">📷 Фото${arr.length > 1 ? ' ' + (idx+1) : ''}</a>`).join(' &nbsp;|&nbsp; ') + '<br>' : ''}
-        ${e.removedOther ? `Інше зняті: ${e.removedOther}<br>` : ''}
+        ${e.removedOther ? `Інше місце зняті: ${e.removedOther}<br>` : ''}
         Встановлений: ${e.installedMeterType} ${e.installedMeterNumber}<br>
         ${e.installedPhotoUrl ? e.installedPhotoUrl.split('\n').filter(u => u.trim()).map((u, idx, arr) => `<a href="${u}" target="_blank" style="color:#1565c0;text-decoration:underline;">📷 Фото${arr.length > 1 ? ' ' + (idx+1) : ''}</a>`).join(' &nbsp;|&nbsp; ') + '<br>' : ''}
-        ${e.installedOther ? `Інше встановлені: ${e.installedOther}<br>` : ''}
+        ${e.installedOther ? `Інше місце встановлені: ${e.installedOther}<br>` : ''}
         ${buildPlombLine(e)}
       </div>
     </div>`;
