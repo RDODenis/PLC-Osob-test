@@ -439,7 +439,7 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 // ==========================================
 // ⚠️ ТУТ ВСТАВ ПОСИЛАННЯ З GOOGLE APPS SCRIPT
 // ==========================================
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCq_hcD3sZPrU_Nl31srPytCQUsQlq9VQdYAW-GVpHvKjQnF-aypCKsYUJZCF4nQXcJA/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzs5S4sr06sOSPXMZU0k1JYi-eZelsd7ok5D1f016IPufJAthDjlRZbFG1lKQIsLy5Uiw/exec"; 
 
 // ==========================================
 // ОПТИМІЗОВАНИЙ МІСТ ДЛЯ ШВИДКОГО ЗВ'ЯЗКУ
@@ -674,6 +674,7 @@ window.onload = function() {
     document.getElementById("app").classList.remove("hidden");
     updateOfflineCount();
     updateJournalCount();
+    syncInventoryWithServerPLC(true);
 
     // ФОНОВА ПЕРЕВІРКА ДОСТУПУ!
     if (navigator.onLine) {
@@ -702,6 +703,50 @@ function logout() {
 // ЛОГІКА: КЕРУВАННЯ ВЛАСНИМИ ПЛОМБАМИ / МАГНІТАМИ
 // ==========================================
 let currentModalType = 'plomb';
+
+const INVENTORY_APP_PLC = "PLC";
+let inventorySyncRunningPLC = false;
+function getPendingInventoryPLC() { try { return JSON.parse(localStorage.getItem("inventoryPendingPLC") || "{\"plomb\":[],\"magnet\":[]}"); } catch(e) { return {plomb:[],magnet:[]}; } }
+function setPendingInventoryPLC(value) { localStorage.setItem("inventoryPendingPLC", JSON.stringify(value)); }
+async function syncInventoryWithServerPLC(silent = true) {
+  if (inventorySyncRunningPLC || !navigator.onLine || !workerTab) return;
+  inventorySyncRunningPLC = true;
+  try {
+    const pending = getPendingInventoryPLC();
+    const result = await sendToGoogle("inventorySync", {
+      worker: workerTab,
+      app: INVENTORY_APP_PLC,
+      plombs: JSON.parse(localStorage.getItem("myPlombs") || "[]"),
+      magnets: JSON.parse(localStorage.getItem("myMagnets") || "[]"),
+      pendingPlombs: pending.plomb || [],
+      pendingMagnets: pending.magnet || []
+    });
+    if (result && result.success) {
+      localStorage.setItem("myPlombs", JSON.stringify(result.plomb || []));
+      localStorage.setItem("myMagnets", JSON.stringify(result.magnet || []));
+      setPendingInventoryPLC({plomb:[],magnet:[]});
+      updateCountersUI();
+      if (result.conflicts && result.conflicts.length && !silent) alert("⚠️ Конфлікт синхронізації: " + result.conflicts.map(x => x.number).join(", "));
+    }
+  } catch(e) {
+    // При слабкому інтернеті залишаємо локальний кеш.
+  } finally { inventorySyncRunningPLC = false; }
+}
+async function consumeInventoryOnServerPLC(usedPlombs, usedMagnets) {
+  const items=[...(usedPlombs||[]).map(number=>({type:"plomb",number})), ...(usedMagnets||[]).map(number=>({type:"magnet",number}))];
+  if (!items.length) return;
+  if (!navigator.onLine) {
+    const pending=getPendingInventoryPLC();
+    pending.plomb=[...new Set([...(pending.plomb||[]),...(usedPlombs||[])])];
+    pending.magnet=[...new Set([...(pending.magnet||[]),...(usedMagnets||[])])];
+    setPendingInventoryPLC(pending); return;
+  }
+  try {
+    const result=await sendToGoogle("inventoryConsume", {worker:workerTab,app:INVENTORY_APP_PLC,account:currentAccount||"",jobId:"",items});
+    if(result && result.success){ localStorage.setItem("myPlombs",JSON.stringify(result.plomb||[])); localStorage.setItem("myMagnets",JSON.stringify(result.magnet||[])); updateCountersUI(); if(result.conflicts&&result.conflicts.length) alert("⚠️ Не вдалося синхронізувати: "+result.conflicts.map(x=>x.number).join(", ")); }
+  } catch(e) {}
+}
+
 
 function openPlombsModal(type) {
   currentModalType = type;
@@ -756,6 +801,7 @@ function generatePlombs() {
   }
 
   localStorage.setItem(storageKey, JSON.stringify(list));
+  syncInventoryWithServerPLC(false);
   document.getElementById("plombStart").value = "";
   document.getElementById("plombEnd").value = "";
   updateCountersUI();
@@ -784,6 +830,8 @@ function clearPlombs() {
   if(confirm("Ви впевнені, що хочете очистити цей список?")) {
     let storageKey = currentModalType === 'plomb' ? 'myPlombs' : 'myMagnets';
     localStorage.removeItem(storageKey);
+    if (navigator.onLine && workerTab) sendToGoogle("inventoryClear", {worker: workerTab, type: currentModalType, app: INVENTORY_APP_PLC}).then(() => syncInventoryWithServerPLC(true)).catch(() => {});
+    syncInventoryWithServerPLC(false);
     updateCountersUI();
   }
 }
@@ -852,6 +900,7 @@ function removeUsedPlombs(usedPlombs, usedMagnets) {
   localStorage.setItem("myPlombs", JSON.stringify(newPlombs));
   localStorage.setItem("myMagnets", JSON.stringify(newMagnets));
   updateCountersUI();
+  consumeInventoryOnServerPLC(cPlombs, cMagnets);
 }
 
 // ==========================================
@@ -992,6 +1041,7 @@ async function doLogin() {
       document.getElementById("app").classList.remove("hidden");
       updateOfflineCount();
       updateJournalCount();
+      syncInventoryWithServerPLC(true);
     } else {
       alert(res.message);
     }
@@ -1624,14 +1674,11 @@ function renderJournalForDate() {
       </div>
       
       <div class="journal-pib">${e.address || '—'}</div>
-      
-            <div class="journal-meters">
+      <div class="journal-meters">
         Знятий: ${e.removedMeterType} ${e.removedMeterNumber}<br>${buildReadingsLine(e) ? `<b>${buildReadingsLine(e)}</b><br>` : ''}
         ${e.photoUrl ? e.photoUrl.split('\n').filter(u => u.trim()).map((u, idx, arr) => `<a href="${u}" target="_blank" style="color:#1565c0;text-decoration:underline;">📷 Фото${arr.length > 1 ? ' ' + (idx+1) : ''}</a>`).join(' &nbsp;|&nbsp; ') + '<br>' : ''}
-        ${e.removedOther ? `Інше місце зняті: ${e.removedOther}<br>` : ''}
         Встановлений: ${e.installedMeterType} ${e.installedMeterNumber}<br>
         ${e.installedPhotoUrl ? e.installedPhotoUrl.split('\n').filter(u => u.trim()).map((u, idx, arr) => `<a href="${u}" target="_blank" style="color:#1565c0;text-decoration:underline;">📷 Фото${arr.length > 1 ? ' ' + (idx+1) : ''}</a>`).join(' &nbsp;|&nbsp; ') + '<br>' : ''}
-        ${e.installedOther ? `Інше місце встановлені: ${e.installedOther}<br>` : ''}
         ${buildPlombLine(e)}
       </div>
     </div>`;
@@ -2054,7 +2101,7 @@ async function removePhoto(slot, index) {
   showScreen('step1');
   document.getElementById('btnSaveMain').textContent = '💾 Зберегти зміни';
 }
-   function updateJournalEntryInPlace(payload) {
+  function updateJournalEntryInPlace(payload) {
   let journal = JSON.parse(localStorage.getItem('journalPLC') || '[]');
   const idx = journal.findIndex(e => e.ts === editingJournalTs);
   if (idx === -1) return;
@@ -2067,15 +2114,6 @@ async function removePhoto(slot, index) {
     removedMeterNumber: payload.removedMeterNumber || '',
     removedT0: payload.removedT0 || '', removedT1: payload.removedT1 || '',
     removedT2: payload.removedT2 || '', removedT3: payload.removedT3 || '',
-    removedLichil: payload.removedLichil || '',
-    removedFasad1: payload.removedFasad1 || '',
-    removedFasad2: payload.removedFasad2 || '',
-    removedVkp: payload.removedVkp || '',
-    removedOptop: payload.removedOptop || '',
-    removedImp1: payload.removedImp1 || '',
-    removedImp2: payload.removedImp2 || '',
-    removedImp3: payload.removedImp3 || '',
-    removedOther: payload.removedOther || '',
     installedMeterType: payload.installedMeterType || '',
     installedMeterNumber: payload.installedMeterNumber || '',
     installedLichil: payload.installedLichil || '',
@@ -2086,7 +2124,6 @@ async function removePhoto(slot, index) {
     installedImp1: payload.installedImp1 || '',
     installedImp2: payload.installedImp2 || '',
     installedImp3: payload.installedImp3 || '',
-    installedOther: payload.installedOther || '',
     photoUrl: payload.photoUrl || '',
     installedPhotoUrl: payload.installedPhotoUrl || ''
   };
@@ -2095,3 +2132,5 @@ async function removePhoto(slot, index) {
 }
   
 </script>
+window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); });
+
