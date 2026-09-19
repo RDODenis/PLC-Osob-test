@@ -2130,7 +2130,8 @@ async function removePhoto(slot, index) {
   localStorage.setItem('journalPLC', JSON.stringify(journal));
   updateJournalCount();
 }
+  window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); });
   
 </script>
-window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); });
+
 
