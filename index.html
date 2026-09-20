@@ -496,6 +496,8 @@ function canonicalizeMeterType(s) {
   if (!s) return '';
   // Ігноруємо пробіли, крапки й дефіси — всі три зустрічаються як роздільники непослідовно
   let str = s.toUpperCase().replace(/[\s.\-]+/g, '');
+  // У журналі префікс може бути кирилицею "НІК", а у Google Форми він "NIK".
+  str = str.replace(/^НІК/, 'NIK');
   const map = { 'А':'A','В':'B','Е':'E','К':'K','М':'M','Н':'H','О':'O','Р':'P','С':'C','Т':'T','Х':'X','У':'Y','І':'I' };
   return str.split('').map(ch => map[ch] || ch).join('');
 }
@@ -605,7 +607,7 @@ if (state === 'idle') {
     const remResult = normalizeMeterTypeForForm(e.removedMeterType);
     const instResult = normalizeMeterTypeForForm(e.installedMeterType);
     if (!remResult || !instResult) {
-      alert('ДІАГНОСТИКА:\nЗнятий (сирий): [' + e.removedMeterType + ']\nЗнятий (результат): [' + remResult + ']\n\nВстановлений (сирий): [' + e.installedMeterType + ']\nВстановлений (результат): [' + instResult + ']');
+      alert('ДІАГНОСТИКА:\nЗнятий (сирий): [' + (e.removedMeterType || '') + ']\nЗнятий (результат): [' + remResult + ']\n\nВстановлений (сирий): [' + (e.installedMeterType || '') + ']\nВстановлений (результат): [' + instResult + ']\n\nЗробіть скріншот цього повідомлення та відправте його розробнику. Це допоможе довести програму до ідеалу.');
     }
     window.open(buildGoogleFormUrl(e), '_blank');
     
@@ -2169,8 +2171,6 @@ async function removePhoto(slot, index) {
   localStorage.setItem('journalPLC', JSON.stringify(journal));
   updateJournalCount();
 }
-window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); });  
+ window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); }); 
 </script>
-
-
 
