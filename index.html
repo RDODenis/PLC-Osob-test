@@ -439,7 +439,7 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 // ==========================================
 // ⚠️ ТУТ ВСТАВ ПОСИЛАННЯ З GOOGLE APPS SCRIPT
 // ==========================================
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwPlRAY2R5yWopBh_nvDU8TbE6FmauHpppST9IuW1YTKzLuPeto_Cw_RqnMg30a-z8NYA/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyw5Y1I14NhLA8ez-EVOk4Bj5dDSXtsmo05FrK42kUHygVLkcV3DCp7bP_maIYRta3LeQ/exec"; 
 
 // ==========================================
 // ОПТИМІЗОВАНИЙ МІСТ ДЛЯ ШВИДКОГО ЗВ'ЯЗКУ
@@ -2130,8 +2130,7 @@ async function removePhoto(slot, index) {
   localStorage.setItem('journalPLC', JSON.stringify(journal));
   updateJournalCount();
 }
-  window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); });
-  
+ window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); }); 
 </script>
 
 
