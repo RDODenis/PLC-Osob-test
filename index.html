@@ -439,7 +439,7 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 // ==========================================
 // ⚠️ ТУТ ВСТАВ ПОСИЛАННЯ З GOOGLE APPS SCRIPT
 // ==========================================
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNQJe3upTtqWdjuJt3Cb2uQR10Wd2JQui06agcBj2YdEgI1yoDvkcfUK1hKvLf0SDCoQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyw5Y1I14NhLA8ez-EVOk4Bj5dDSXtsmo05FrK42kUHygVLkcV3DCp7bP_maIYRta3LeQ/exec"; 
 
 // ==========================================
 // ОПТИМІЗОВАНИЙ МІСТ ДЛЯ ШВИДКОГО ЗВ'ЯЗКУ
@@ -734,18 +734,27 @@ async function syncInventoryWithServerPLC(silent = true) {
   } finally { inventorySyncRunningPLC = false; }
 }
 async function consumeInventoryOnServerPLC(usedPlombs, usedMagnets) {
-  const items=[...(usedPlombs||[]).map(number=>({type:"plomb",number})), ...(usedMagnets||[]).map(number=>({type:"magnet",number}))];
+  const currentPlombs = JSON.parse(localStorage.getItem("myPlombs") || "[]");
+  const currentMagnets = JSON.parse(localStorage.getItem("myMagnets") || "[]");
+  const uniquePlombs = [...new Set((usedPlombs || []).map(cleanPlomb).filter(number => currentPlombs.includes(number)))];
+  const uniqueMagnets = [...new Set((usedMagnets || []).map(cleanPlomb).filter(number => currentMagnets.includes(number)))];
+  const items=[...uniquePlombs.map(number=>({type:"plomb",number})), ...uniqueMagnets.map(number=>({type:"magnet",number}))];
   if (!items.length) return;
   if (!navigator.onLine) {
     const pending=getPendingInventoryPLC();
-    pending.plomb=[...new Set([...(pending.plomb||[]),...(usedPlombs||[])])];
-    pending.magnet=[...new Set([...(pending.magnet||[]),...(usedMagnets||[])])];
+    pending.plomb=[...new Set([...(pending.plomb||[]),...uniquePlombs])];
+    pending.magnet=[...new Set([...(pending.magnet||[]),...uniqueMagnets])];
     setPendingInventoryPLC(pending); return;
   }
   try {
     const result=await sendToGoogle("inventoryConsume", {worker:workerTab,app:INVENTORY_APP_PLC,account:currentAccount||"",jobId:"",items});
-    if(result && result.success){ localStorage.setItem("myPlombs",JSON.stringify(result.plomb||[])); localStorage.setItem("myMagnets",JSON.stringify(result.magnet||[])); updateCountersUI(); if(result.conflicts&&result.conflicts.length) alert("⚠️ Не вдалося синхронізувати: "+result.conflicts.map(x=>x.number).join(", ")); }
-  } catch(e) {}
+    if(result && result.success){
+      localStorage.setItem("myPlombs",JSON.stringify(result.plomb||[]));
+      localStorage.setItem("myMagnets",JSON.stringify(result.magnet||[]));
+      updateCountersUI();
+    }
+    // Конфлікти інвентарю не блокують і не змінюють логіку журналу.
+  } catch(e) { console.warn("Фонове оновлення інвентарю PLC:", e); }
 }
 
 
@@ -2154,8 +2163,10 @@ async function removePhoto(slot, index) {
   localStorage.setItem('journalPLC', JSON.stringify(journal));
   updateJournalCount();
 }
-window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); });  
+ window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); }); 
 </script>
+
+
 
 
 
