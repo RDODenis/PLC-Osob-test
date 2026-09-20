@@ -729,7 +729,8 @@ async function syncInventoryWithServerPLC(silent = true) {
       if (result.conflicts && result.conflicts.length && !silent) alert("⚠️ Конфлікт синхронізації: " + result.conflicts.map(x => x.number).join(", "));
     }
   } catch(e) {
-    // При слабкому інтернеті залишаємо локальний кеш.
+  console.error("Помилка синхронізації:", e);
+  alert("Помилка синхронізації: " + e.message);
   } finally { inventorySyncRunningPLC = false; }
 }
 async function consumeInventoryOnServerPLC(usedPlombs, usedMagnets) {
