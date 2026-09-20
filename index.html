@@ -721,6 +721,13 @@ async function syncInventoryWithServerPLC(silent = true) {
       pendingPlombs: pending.plomb || [],
       pendingMagnets: pending.magnet || []
     });
+    if (!result || !result.success) {
+  console.error("Відповідь сервера:", result);
+  alert("Сервер не прийняв пломби: " + JSON.stringify(result));
+  return;
+}
+
+alert("Пломби синхронізовано з сервером");
     if (result && result.success) {
       localStorage.setItem("myPlombs", JSON.stringify(result.plomb || []));
       localStorage.setItem("myMagnets", JSON.stringify(result.magnet || []));
