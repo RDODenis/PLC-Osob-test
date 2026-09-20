@@ -439,7 +439,7 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 // ==========================================
 // ⚠️ ТУТ ВСТАВ ПОСИЛАННЯ З GOOGLE APPS SCRIPT
 // ==========================================
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJxFYKms2uAf3ZX348DsCC00WlHUelEpSP6ktLiQSmEQMDrA94R0h_d5VsIa4YuKfp8A/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKZGAn1eQ2ac_cjKpHRc02CATdRMyygKhczrZ123T4Dll6fMCrby9UIJMYSDFbpyp0oA/exec"; 
 
 // ==========================================
 // ОПТИМІЗОВАНИЙ МІСТ ДЛЯ ШВИДКОГО ЗВ'ЯЗКУ
@@ -711,16 +711,26 @@ let inventorySyncRunningPLC = false;
 let inventoryClearRunningPLC = false;
 function getPendingInventoryPLC() { try { return JSON.parse(localStorage.getItem("inventoryPendingPLC") || "{\"plomb\":[],\"magnet\":[]}"); } catch(e) { return {plomb:[],magnet:[]}; } }
 function setPendingInventoryPLC(value) { localStorage.setItem("inventoryPendingPLC", JSON.stringify(value)); }
-async function syncInventoryWithServerPLC(silent = true) {
+function getPendingInventoryAddPLC() { try { return JSON.parse(localStorage.getItem("inventoryPendingAddPLC") || "{\"plomb\":[],\"magnet\":[]}"); } catch(e) { return {plomb:[],magnet:[]}; } }
+function setPendingInventoryAddPLC(value) { localStorage.setItem("inventoryPendingAddPLC", JSON.stringify(value)); }
+async function syncInventoryWithServerPLC(silent = true, additions = null) {
+  // Нові номери додаються окремою чергою. Старий локальний список ніколи не відправляємо.
+  if (additions) {
+    const pendingAdd = getPendingInventoryAddPLC();
+    pendingAdd.plomb = [...new Set([...(pendingAdd.plomb || []), ...(additions.plombs || [])])];
+    pendingAdd.magnet = [...new Set([...(pendingAdd.magnets || []) , ...(additions.magnets || [])])];
+    setPendingInventoryAddPLC(pendingAdd);
+  }
   if (inventorySyncRunningPLC || inventoryClearRunningPLC || !navigator.onLine || !workerTab) return;
   inventorySyncRunningPLC = true;
   try {
     const pending = getPendingInventoryPLC();
+    const pendingAdd = getPendingInventoryAddPLC();
     const result = await sendToGoogle("inventorySync", {
       worker: workerTab,
       app: INVENTORY_APP_PLC,
-      plombs: JSON.parse(localStorage.getItem("myPlombs") || "[]"),
-      magnets: JSON.parse(localStorage.getItem("myMagnets") || "[]"),
+      addPlombs: pendingAdd.plomb || [],
+      addMagnets: pendingAdd.magnet || [],
       pendingPlombs: pending.plomb || [],
       pendingMagnets: pending.magnet || []
     });
@@ -728,11 +738,12 @@ async function syncInventoryWithServerPLC(silent = true) {
       localStorage.setItem("myPlombs", JSON.stringify(result.plomb || []));
       localStorage.setItem("myMagnets", JSON.stringify(result.magnet || []));
       setPendingInventoryPLC({plomb:[],magnet:[]});
+      setPendingInventoryAddPLC({plomb:[],magnet:[]});
       updateCountersUI();
       if (result.conflicts && result.conflicts.length && !silent) alert("⚠️ Конфлікт синхронізації: " + result.conflicts.map(x => x.number).join(", "));
     }
   } catch(e) {
-    // При слабкому інтернеті залишаємо локальний кеш.
+    // При слабкому інтернеті залишаємо локальний кеш і чергу нових номерів.
   } finally { inventorySyncRunningPLC = false; }
 }
 async function consumeInventoryOnServerPLC(usedPlombs, usedMagnets) {
@@ -800,18 +811,20 @@ function generatePlombs() {
   let storageKey = currentModalType === 'plomb' ? 'myPlombs' : 'myMagnets';
   let list = JSON.parse(localStorage.getItem(storageKey) || "[]");
   let addedCount = 0;
+  const newlyGenerated = [];
 
   for(let i = numStart; i <= numEnd; i++) {
     let numStr = i.toString().padStart(lengthStr, '0');
     let newPlomb = prefix + numStr;
     if(!list.includes(newPlomb)) {
       list.push(newPlomb);
+      newlyGenerated.push(newPlomb);
       addedCount++;
     }
   }
 
   localStorage.setItem(storageKey, JSON.stringify(list));
-  syncInventoryWithServerPLC(false);
+  syncInventoryWithServerPLC(false, currentModalType === 'plomb' ? {plombs: newlyGenerated, magnets: []} : {plombs: [], magnets: newlyGenerated});
   document.getElementById("plombStart").value = "";
   document.getElementById("plombEnd").value = "";
   updateCountersUI();
@@ -842,6 +855,10 @@ async function clearPlombs() {
   while (inventorySyncRunningPLC) await new Promise(resolve => setTimeout(resolve, 100));
   inventoryClearRunningPLC = true;
   const storageKey = currentModalType === 'plomb' ? 'myPlombs' : 'myMagnets';
+  const pendingAdd = getPendingInventoryAddPLC();
+  if (currentModalType === 'plomb') pendingAdd.plomb = [];
+  else pendingAdd.magnet = [];
+  setPendingInventoryAddPLC(pendingAdd);
   localStorage.setItem(storageKey, "[]");
   updateCountersUI();
 
@@ -2173,4 +2190,6 @@ async function removePhoto(slot, index) {
 }
  window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); }); 
 </script>
+
+
 
