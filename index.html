@@ -439,7 +439,7 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 // ==========================================
 // ⚠️ ТУТ ВСТАВ ПОСИЛАННЯ З GOOGLE APPS SCRIPT
 // ==========================================
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTlCPvwdI1WS8x--f_F-KISACFByqmNWU39cYnDeBXWN_XfATi39p2DAxgBd9p91zOfQ/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJxFYKms2uAf3ZX348DsCC00WlHUelEpSP6ktLiQSmEQMDrA94R0h_d5VsIa4YuKfp8A/exec"; 
 
 // ==========================================
 // ОПТИМІЗОВАНИЙ МІСТ ДЛЯ ШВИДКОГО ЗВ'ЯЗКУ
@@ -734,10 +734,8 @@ async function syncInventoryWithServerPLC(silent = true) {
   } finally { inventorySyncRunningPLC = false; }
 }
 async function consumeInventoryOnServerPLC(usedPlombs, usedMagnets) {
-  const currentPlombs = JSON.parse(localStorage.getItem("myPlombs") || "[]");
-  const currentMagnets = JSON.parse(localStorage.getItem("myMagnets") || "[]");
-  const uniquePlombs = [...new Set((usedPlombs || []).map(cleanPlomb).filter(number => currentPlombs.includes(number)))];
-  const uniqueMagnets = [...new Set((usedMagnets || []).map(cleanPlomb).filter(number => currentMagnets.includes(number)))];
+  const uniquePlombs = [...new Set((usedPlombs || []).map(cleanPlomb).filter(Boolean))];
+  const uniqueMagnets = [...new Set((usedMagnets || []).map(cleanPlomb).filter(Boolean))];
   const items=[...uniquePlombs.map(number=>({type:"plomb",number})), ...uniqueMagnets.map(number=>({type:"magnet",number}))];
   if (!items.length) return;
   if (!navigator.onLine) {
@@ -753,7 +751,7 @@ async function consumeInventoryOnServerPLC(usedPlombs, usedMagnets) {
       localStorage.setItem("myMagnets",JSON.stringify(result.magnet||[]));
       updateCountersUI();
     }
-    // Конфлікти інвентарю не блокують і не змінюють логіку журналу.
+    // Невідомі номери не блокують збереження роботи.
   } catch(e) { console.warn("Фонове оновлення інвентарю PLC:", e); }
 }
 
@@ -1289,6 +1287,7 @@ if (dupInst) {
     // PLC працює у режимі заміни лічильника.
     mode: "replace",
     workType: "Заміна лічильника",
+    replaceReason: "ІП (PLC)",
     worker: workerTab,
     entryId: entryId,
     pib: document.getElementById("viewPib1").innerText,
@@ -1311,7 +1310,8 @@ if (dupInst) {
     installedPhotoUrl: document.getElementById('photoUrl_installed').value.trim()
   };
   
-  removeUsedPlombs([l.inst, f1.inst, f2.inst, vkp.inst, opt.inst], [imp1.inst, imp2.inst, imp3.inst]);
+  const usedPlombsForInventory = [l.inst, f1.inst, f2.inst, vkp.inst, opt.inst];
+  const usedMagnetsForInventory = [imp1.inst, imp2.inst, imp3.inst];
 
   const btn = document.getElementById("btnSaveMain");
   const hint = document.getElementById("saveHint");
@@ -1323,6 +1323,7 @@ if (dupInst) {
       const res = await sendToGoogle('updateData', { data: payload });
       if (res && res.success) {
         updateJournalEntryInPlace(payload);
+        removeUsedPlombs(usedPlombsForInventory, usedMagnetsForInventory);
         playSuccessSound();
         hint.innerText = "✅ Запис оновлено!";
         setTimeout(() => {
@@ -1351,6 +1352,7 @@ if (dupInst) {
     offlineData.push(payload);
     localStorage.setItem('offlineDataPLC', JSON.stringify(offlineData));
     addToJournal(payload, 'offline');
+    removeUsedPlombs(usedPlombsForInventory, usedMagnetsForInventory);
     playSuccessSound();
     hint.innerText = "✅ Збережено ОФЛАЙН!";
     setTimeout(() => { btn.style.display = "block"; goHome(); }, 1500);
@@ -1361,6 +1363,7 @@ if (dupInst) {
     const res = await sendToGoogle("saveData", { data: payload });
     if(res.success) {
       addToJournal(payload, 'online');
+      removeUsedPlombs(usedPlombsForInventory, usedMagnetsForInventory);
       playSuccessSound();
       hint.innerText = "✅ Дані успішно збережено!";
       setTimeout(() => { btn.style.display = "block"; goHome(); }, 1500);
@@ -2166,6 +2169,8 @@ async function removePhoto(slot, index) {
   localStorage.setItem('journalPLC', JSON.stringify(journal));
   updateJournalCount();
 }
- window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); }); 
+window.addEventListener("online", () => { if (typeof syncInventoryWithServerPLC === "function") syncInventoryWithServerPLC(true); });  
 </script>
+
+
 
