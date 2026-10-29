@@ -1106,8 +1106,56 @@ async function doLogin() {
 // ПОШУК (З ПЕРЕВІРКОЮ БЕЗПЕКИ)
 // ==========================================
 async function search() {
-  const acc = document.getElementById("account").value.trim();
-  if (!acc) return alert("Введіть рахунок!");
+    const accountInput = document.getElementById("account");
+  const acc = accountInput.value.trim();
+
+  // 1. Перевірка на порожнє поле
+  if (!acc) {
+    alert("Введіть особовий рахунок!");
+    accountInput.focus();
+    return;
+  }
+
+  // 2. Перевірка: тільки цифри
+  if (!/^\d+$/.test(acc)) {
+    alert("Некоректний особовий рахунок!\nДозволені лише цифри.");
+    accountInput.focus();
+    return;
+  }
+
+  // 3. Перевірка: менше ніж 10 цифр
+  if (acc.length < 10) {
+    alert(
+      "Особовий рахунок закороткий!\n" +
+      "Введено цифр: " + acc.length + "\n" +
+      "Потрібно: 10 цифр."
+    );
+    accountInput.focus();
+    return;
+  }
+
+  // 4. Перевірка: більше ніж 10 цифр
+  if (acc.length > 10) {
+    alert(
+      "Особовий рахунок задовгий!\n" +
+      "Введено цифр: " + acc.length + "\n" +
+      "Потрібно: 10 цифр."
+    );
+    accountInput.focus();
+    return;
+  }
+
+  // 5. Перевірка перших трьох цифр
+  if (!acc.startsWith("123")) {
+    alert(
+      "Некоректний особовий рахунок: " + acc + "\n\n" +
+      "Особовий рахунок має починатися з 123.\n" +
+      "Приклад правильного рахунку: 1230000022."
+    );
+    accountInput.focus();
+    accountInput.select();
+    return;
+  }
   
   if (!navigator.onLine) {
     currentAccount = acc;
