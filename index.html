@@ -1533,15 +1533,28 @@ function startScanner(targetFieldId, doSearch) {
         selectedDeviceId, 
         { fps: 15, qrbox: { width: 250, height: 250} },
         (decodedText) => {
-          playBeep(); 
-          let finalCode = (currentScanTargetId !== "account") ? parseMeterBarcode(decodedText) : decodedText;
-          document.getElementById(currentScanTargetId).value = finalCode;
+  playBeep();
+  let finalCode;
+      // Особовий рахунок: витягуємо 10 цифр із QR-коду
+    if (currentScanTargetId === "account") {
+      finalCode = parseAccountQr(decodedText);
+    if (!finalCode) {
+      stopScanner();
+      alert("QR-код не містить коректного особового рахунку з 10 цифр.");
+      return;
+    }
+  } else {
+    // Номери лічильників обробляємо за старою логікою
+    finalCode = parseMeterBarcode(decodedText);
+  }
 
-          setTimeout(() => {
-            stopScanner(); 
-            if (autoSearchAfterScan) search(); 
-          }, 300);
-        },
+  document.getElementById(currentScanTargetId).value = finalCode;
+
+  setTimeout(() => {
+    stopScanner();
+    if (autoSearchAfterScan) search();
+  }, 300);
+},
         () => {} 
       ).then(() => {
         setTimeout(() => setZoom(2.5), 300);
@@ -1560,7 +1573,7 @@ function stopScanner() {
   const tBtn = document.getElementById("torch-btn");
   if(tBtn) tBtn.style.background = "#FFc107";
 }
-
+// фунція сканування номера лічильників
 function parseMeterBarcode(rawCode) {
   let code = String(rawCode).trim();
   if (code.length === 16 && (code.startsWith("2100") ||code.startsWith("2104") || code.startsWith("2102") || code.startsWith("2300") || code.startsWith("2301") || code.startsWith("2303") || code.startsWith("2307") || code.startsWith("2102"))) {
@@ -1570,6 +1583,29 @@ function parseMeterBarcode(rawCode) {
     return code.substring(5, 12);
   }
   return code;
+}
+  // Витягує особовий рахунок із QR-коду
+function parseAccountQr(rawCode) {
+  const code = String(rawCode || "").trim();
+  // Старий QR-код: тільки 10 цифр
+  if (/^\d{10}$/.test(code)) {
+    return code;
+  }
+  // Новий QR-код: посилання з параметром account
+  try {
+    const url = new URL(code);
+    const account = (url.searchParams.get("account") || "").trim();
+    if (/^\d{10}$/.test(account)) {
+      return account;
+    }
+  } catch (e) {
+    // Якщо текст не є повноцінним URL, перевіримо його нижче
+  }
+
+  // Резервний пошук особового рахунку в тексті посилання
+  const match = code.match(/[?&]account=(\d{10})(?:[&#]|$)/i);
+
+  return match ? match[1] : "";
 }
 
 // ==========================================
