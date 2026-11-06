@@ -84,8 +84,8 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 .inventory-editor-row span { flex:1; font-weight:600; }
 .inventory-editor-row button { min-height:28px; width:30px; padding:0; margin:0; font-size:16px; }
 .inventory-editor-row .delete-one { background:#ffebee; color:#c62828; }
-.inventory-edit-actions { display:flex; gap:6px; margin:6px 0; }
-.inventory-edit-actions button { flex:1; min-height:34px; margin:0; font-size:13px; }
+.drag-handle { width:28px; min-width:28px; text-align:center; font-size:21px; color:#607D8B; cursor:grab; touch-action:none; user-select:none; }
+.inventory-editor-row.dragging { opacity:.55; background:#e3f2fd; }
 
 /* ПРОФЕСІЙНИЙ СКАНЕР */
 #scanner-wrapper { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; align-items: center; justify-content: center; flex-direction: column; }
@@ -387,11 +387,6 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
     <div style="font-weight:bold;">Доступні (<span id="plombsCountModal">0</span> шт):</div>
     <div class="plomb-list" id="plombListDiv">Немає доданих пломб</div>
     <button id="inventoryEditTogglePLC" onclick="toggleInventoryEditorPLC()" style="background:#607D8B; min-height:34px; margin:0 0 5px; font-size:14px;">✏️ Редагувати список</button>
-    <div id="inventoryEditActionsPLC" class="inventory-edit-actions hidden">
-      <button onclick="deleteSelectedInventoryPLC()" style="background:#e53935;">🗑 Видалити вибрані</button>
-      <button onclick="toggleInventoryEditorPLC()" style="background:#9e9e9e;">Готово</button>
-    </div>
-    
     <button onclick="clearPlombs()" style="background: #e53935; min-height: 40px; margin-top:5px; font-size: 16px;">🗑 Очистити всі</button>
     <button class="btn-back" onclick="closePlombsModal()" style="min-height: 40px;">✖ Закрити</button>
   </div>
@@ -450,7 +445,7 @@ textarea { resize: none; overflow: hidden; font-size: 14px; }
 // ==========================================
 // ⚠️ ТУТ ВСТАВ ПОСИЛАННЯ З GOOGLE APPS SCRIPT
 // ==========================================
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzXanD9e94wEw3kWFprGF1KBuXmsa5jzq-_kgatw3PvR72qtHgyBmUQzOryaRb5WE1A4g/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5T-GlAH1PjHb0bRpTbGXk2QoW9aUANrR2WkLnxNcwTVDyjOT93RpyyhRPDCXQMu4ngw/exec"; 
 
 // ==========================================
 // ОПТИМІЗОВАНИЙ МІСТ ДЛЯ ШВИДКОГО ЗВ'ЯЗКУ
@@ -858,22 +853,17 @@ function generatePlombs() {
 }
 
 let inventoryEditorPLC = false;
+let activeInventoryDragPLC = null;
 function escapeInventoryTextPLC(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 function toggleInventoryEditorPLC() {
   inventoryEditorPLC = !inventoryEditorPLC;
-  const actions = document.getElementById("inventoryEditActionsPLC");
-  if (actions) actions.classList.toggle("hidden", !inventoryEditorPLC);
   const button = document.getElementById("inventoryEditTogglePLC");
-  if (button) button.textContent = inventoryEditorPLC ? "✅ Режим редагування" : "✏️ Редагувати список";
+  if (button) button.textContent = inventoryEditorPLC ? "✅ Завершити редагування" : "✏️ Редагувати список";
   updateCountersUI();
 }
 function getInventoryListPLC(type) { return JSON.parse(localStorage.getItem(type === "plomb" ? "myPlombs" : "myMagnets") || "[]"); }
 function setInventoryListPLC(type, list) { localStorage.setItem(type === "plomb" ? "myPlombs" : "myMagnets", JSON.stringify(list)); }
-function queueInventoryOrderPLC(type, list) {
-  const pending = getPendingInventoryOrderPLC();
-  pending[type] = list.slice();
-  setPendingInventoryOrderPLC(pending);
-}
+function queueInventoryOrderPLC(type, list) { const pending = getPendingInventoryOrderPLC(); pending[type] = list.slice(); setPendingInventoryOrderPLC(pending); }
 async function persistInventoryOrderPLC(type, list) {
   queueInventoryOrderPLC(type, list);
   if (!navigator.onLine || !workerTab) return;
@@ -885,23 +875,44 @@ async function persistInventoryOrderPLC(type, list) {
     }
   } catch(e) {}
 }
-function moveInventoryItemPLC(index, direction) {
+function finishInventoryDragPLC() {
+  if (!activeInventoryDragPLC) return;
+  const { row, type, move, up } = activeInventoryDragPLC;
+  document.removeEventListener("pointermove", move);
+  document.removeEventListener("pointerup", up);
+  row.classList.remove("dragging");
+  const list = [...document.querySelectorAll("#plombListDiv .inventory-editor-row")].map(item => item.dataset.value);
+  setInventoryListPLC(type, list);
+  activeInventoryDragPLC = null;
+  updateCountersUI();
+  persistInventoryOrderPLC(type, list);
+}
+function startInventoryDragPLC(event, row) {
+  if (!inventoryEditorPLC) return;
+  event.preventDefault();
+  if (activeInventoryDragPLC) finishInventoryDragPLC();
   const type = currentModalType;
-  const list = getInventoryListPLC(type);
-  const next = index + direction;
-  if (next < 0 || next >= list.length) return;
-  [list[index], list[next]] = [list[next], list[index]];
-  setInventoryListPLC(type, list); updateCountersUI(); persistInventoryOrderPLC(type, list);
+  row.classList.add("dragging");
+  const move = function(ev) {
+    ev.preventDefault();
+    const target = document.elementFromPoint(ev.clientX, ev.clientY)?.closest("#plombListDiv .inventory-editor-row");
+    if (!target || target === row) return;
+    const rect = target.getBoundingClientRect();
+    if (ev.clientY < rect.top + rect.height / 2) target.parentNode.insertBefore(row, target);
+    else target.parentNode.insertBefore(row, target.nextSibling);
+  };
+  const up = function() { finishInventoryDragPLC(); };
+  activeInventoryDragPLC = { row, type, move, up };
+  document.addEventListener("pointermove", move, { passive:false });
+  document.addEventListener("pointerup", up, { once:true });
 }
 async function deleteInventoryItemsPLC(numbers) {
   const type = currentModalType;
   const clean = [...new Set((numbers || []).map(cleanPlomb).filter(Boolean))];
   if (!clean.length) return;
-  const list = getInventoryListPLC(type).filter(value => !clean.includes(value));
-  setInventoryListPLC(type, list);
+  setInventoryListPLC(type, getInventoryListPLC(type).filter(value => !clean.includes(value)));
   const pendingDelete = getPendingInventoryDeletePLC();
-  pendingDelete[type] = [...new Set([...(pendingDelete[type] || []), ...clean])];
-  setPendingInventoryDeletePLC(pendingDelete);
+  pendingDelete[type] = [...new Set([...(pendingDelete[type] || []), ...clean])]; setPendingInventoryDeletePLC(pendingDelete);
   const pendingAdd = getPendingInventoryAddPLC(); pendingAdd[type] = (pendingAdd[type] || []).filter(value => !clean.includes(value)); setPendingInventoryAddPLC(pendingAdd);
   updateCountersUI();
   if (navigator.onLine && workerTab) {
@@ -914,10 +925,6 @@ async function deleteInventoryItemsPLC(numbers) {
     } catch(e) {}
   }
 }
-function deleteSelectedInventoryPLC() {
-  const values = [...document.querySelectorAll("#plombListDiv input[data-inventory-select]:checked")].map(input => input.value);
-  deleteInventoryItemsPLC(values);
-}
 function updateCountersUI() {
   let plombs = getInventoryListPLC("plomb");
   let magnets = getInventoryListPLC("magnet");
@@ -926,9 +933,9 @@ function updateCountersUI() {
   let listDiv = document.getElementById("plombListDiv");
   let activeList = currentModalType === 'plomb' ? plombs : magnets;
   document.getElementById("plombsCountModal").innerText = activeList.length;
-  if (!activeList.length) { listDiv.innerHTML = "Список порожній."; return; }
-  if (!inventoryEditorPLC) { listDiv.textContent = activeList.join(", "); return; }
-  listDiv.innerHTML = activeList.map((value, index) => `<div class="inventory-editor-row"><input type="checkbox" data-inventory-select value="${escapeInventoryTextPLC(value)}"><span>${escapeInventoryTextPLC(value)}</span><button onclick="moveInventoryItemPLC(${index},-1)" title="Вгору">↑</button><button onclick="moveInventoryItemPLC(${index},1)" title="Вниз">↓</button><button class="delete-one" onclick="deleteInventoryItemsPLC(['${String(value).replace(/'/g, "\\'")}'])" title="Видалити">✕</button></div>`).join("");
+  if(!activeList.length) { listDiv.innerHTML = "Список порожній."; return; }
+  if(!inventoryEditorPLC) { listDiv.textContent = activeList.join(", "); return; }
+  listDiv.innerHTML = activeList.map((value) => `<div class="inventory-editor-row" data-value="${escapeInventoryTextPLC(value)}"><span class="drag-handle" onpointerdown="startInventoryDragPLC(event,this.parentElement)" title="Перетягнути">⋮⋮</span><span>${escapeInventoryTextPLC(value)}</span><button class="delete-one" onclick="deleteInventoryItemsPLC(['${String(value).replace(/'/g, "\\'")}'])" title="Видалити">✕</button></div>`).join("");
 }
 async function clearPlombs() {
   if (!confirm("Ви впевнені, що хочете очистити цей список?")) return;
